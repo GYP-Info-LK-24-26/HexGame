@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="e1fb59b0-4b9b-49ce-9d3d-288688a3ac9f" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/logic/src/main/java/de/hexgame/logic/Direction.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/logic/src/main/java/de/hexgame/logic/Game.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/logic/src/main/java/de/hexgame/logic/GameBoard.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/logic/src/main/java/de/hexgame/logic/GameState.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/logic/src/main/java/de/hexgame/logic/Move.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/logic/src/main/java/de/hexgame/logic/Piece.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/logic/src/main/java/de/hexgame/logic/Player.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/logic/src/main/java/de/hexgame/logic/Position.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/logic/src/main/java/de/hexgame/logic/RandomPlayer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ai/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/nn/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/buildSrc/src/main/kotlin/buildlogic.java-conventions.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/buildSrc/src/main/kotlin/buildlogic.java-conventions.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utilities/build.gradle.kts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/utilities/src/main/java/org/example/utilities/JoinUtils.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/utilities/src/main/java/org/example/utilities/SplitUtils.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/utilities/src/main/java/org/example/utilities/StringUtils.java" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ExternalProjectsData">
+    <projectState path="$PROJECT_DIR$">
+      <ProjectState />
+    </projectState>
+  </component>
+  <component name="ExternalProjectsManager">
+    <system id="GRADLE">
+      <state>
+        <task path="$PROJECT_DIR$">
+          <activation />
+        </task>
+        <projects_view>
+          <tree_state>
+            <expand>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="HexGame" type="f1a62948:ProjectNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="HexGame" type="f1a62948:ProjectNode" />
+                <item name="Tasks" type="e4a08cd1:TasksNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="HexGame" type="f1a62948:ProjectNode" />
+                <item name="Tasks" type="e4a08cd1:TasksNode" />
+                <item name="build" type="c8890929:TasksNode$1" />
+              </path>
+            </expand>
+            <select />
+          </tree_state>
+        </projects_view>
+      </state>
+    </system>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Enum" />
+        <option value="Interface" />
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 2
+}</component>
+  <component name="ProjectId" id="2xRUVFeBQ2ZQIsmyB5xhsq1osDp" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Gradle.Download Sources.executor": "Run",
+    "Gradle.HexGame [build].executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "main",
+    "ignore.virus.scanning.warn.message": "true",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/Finn/Documents/HexGame",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\Finn\Documents\HexGame\logic\src\main\java" />
+      <recent name="C:\Users\Finn\Documents\HexGame\logic\src\main" />
+    </key>
+  </component>
+  <component name="RunManager">
+    <configuration name="HexGame [build]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="build" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>false</RunAsTest>
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Gradle.HexGame [build]" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9823dce3aa75-a94e463ab2e7-intellij.indexing.shared.core-IU-243.26053.27" />
+        <option value="bundled-js-predefined-d6986cc7102b-1632447f56bf-JavaScript-IU-243.26053.27" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="e1fb59b0-4b9b-49ce-9d3d-288688a3ac9f" name="Changes" comment="" />
+      <created>1747900401960</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1747900401960</updated>
+      <workItem from="1747900403145" duration="3942000" />
+      <workItem from="1747913359591" duration="948000" />
+      <workItem from="1747921519182" duration="6488000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>
