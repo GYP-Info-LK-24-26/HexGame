@@ -102,10 +102,10 @@ public class GameBoard {
             }
         }
 
-        updateConnections(position,piece.getColor());
+        updateConnections(position);
     }
 
-    private void updateConnections(Position position, Piece.Color color) {
+    private void updateConnections(Position position) {
         Piece piece = getPiece(position);
 
         // Update own state first
@@ -117,7 +117,7 @@ public class GameBoard {
 
             Piece neighbourPiece = getPiece(neighbourPosition);
             //make sure that piece is of the same color
-            if (!(neighbourPiece != null && neighbourPiece.getColor() != color)) {
+            if (!(neighbourPiece != null && neighbourPiece.getColor() != piece.getColor())) {
                 continue;
             }
 
@@ -149,11 +149,11 @@ public class GameBoard {
             }
 
             if (piece.isConnectedLow() && !neighbourPiece.isConnectedLow()) {
-                updateConnections(neighbourPosition,color);
+                updateConnections(neighbourPosition);
             }
 
             if (piece.isConnectedHigh() && !neighbourPiece.isConnectedHigh()) {
-                updateConnections(neighbourPosition,color);
+                updateConnections(neighbourPosition);
             }
         }
     }
