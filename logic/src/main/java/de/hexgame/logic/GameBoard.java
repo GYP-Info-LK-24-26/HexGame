@@ -117,7 +117,7 @@ public class GameBoard {
 
             Piece neighbourPiece = getPiece(neighbourPosition);
             //make sure that piece is of the same color
-            if (!(neighbourPiece != null && neighbourPiece.getColor() != piece.getColor())) {
+            if (neighbourPiece == null || neighbourPiece.getColor() != piece.getColor()) {
                 continue;
             }
 
@@ -144,7 +144,7 @@ public class GameBoard {
             }
 
             Piece neighbourPiece = getPiece(neighbourPosition);
-            if (neighbourPiece == null) {
+            if (neighbourPiece == null || neighbourPiece.getColor() != piece.getColor()) {
                 continue;
             }
 
