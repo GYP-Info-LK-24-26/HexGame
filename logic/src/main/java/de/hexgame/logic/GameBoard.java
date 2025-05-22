@@ -15,6 +15,7 @@ public class GameBoard {
     @Getter
     private Piece.Color sideToMove;
     @Getter
+    /// counts the number of individual moves made
     private int halfMoveCounter;
 
     public GameBoard() {
@@ -72,8 +73,8 @@ public class GameBoard {
     protected void makeMove(Move move) {
         if (move.targetHexagon().isValid()) { // The target hexagon may be invalid for switching sides.
             setPiece(move.targetHexagon(), new Piece(sideToMove));
+            switchSideToMove();
         }
-        switchSideToMove();
         halfMoveCounter++;
     }
 
@@ -101,10 +102,10 @@ public class GameBoard {
             }
         }
 
-        updateConnections(position);
+        updateConnections(position,piece.getColor());
     }
 
-    private void updateConnections(Position position) {
+    private void updateConnections(Position position, Piece.Color color) {
         Piece piece = getPiece(position);
 
         // Update own state first
@@ -115,7 +116,8 @@ public class GameBoard {
             }
 
             Piece neighbourPiece = getPiece(neighbourPosition);
-            if (neighbourPiece == null) {
+            //make sure that piece is of the same color
+            if (!(neighbourPiece != null && neighbourPiece.getColor() != color)) {
                 continue;
             }
 
@@ -147,11 +149,11 @@ public class GameBoard {
             }
 
             if (piece.isConnectedLow() && !neighbourPiece.isConnectedLow()) {
-                updateConnections(neighbourPosition);
+                updateConnections(neighbourPosition,color);
             }
 
             if (piece.isConnectedHigh() && !neighbourPiece.isConnectedHigh()) {
-                updateConnections(neighbourPosition);
+                updateConnections(neighbourPosition,color);
             }
         }
     }
