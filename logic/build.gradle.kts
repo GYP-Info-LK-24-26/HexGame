@@ -3,5 +3,5 @@
  */
 
 plugins {
-    id("buildlogic.java-library-conventions")
+    id("buildlogic.java-conventions")
 }

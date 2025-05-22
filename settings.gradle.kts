@@ -11,4 +11,4 @@ plugins {
 }
 
 rootProject.name = "HexGame"
-include("app", "list", "utilities")
+include("logic")
