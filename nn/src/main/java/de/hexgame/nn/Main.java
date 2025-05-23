@@ -1,7 +1,7 @@
 package de.hexgame.nn;
 
 import de.hexgame.logic.Game;
-import de.hexgame.logic.GameBoard;
+import de.hexgame.logic.GameState;
 import de.hexgame.logic.Player;
 import de.hexgame.logic.RandomPlayer;
 import org.deeplearning4j.nn.conf.ComputationGraphConfiguration;
@@ -17,14 +17,14 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 
-import static de.hexgame.logic.GameBoard.BOARD_SIZE;
+import static de.hexgame.logic.GameState.BOARD_SIZE;
 
 public class Main {
     public static void main(String[] args) {
-        GameBoard gameBoard = new GameBoard();
+        GameState gameState = new GameState();
         Player playerA = new RandomPlayer();
         Player playerB = new RandomPlayer();
-        Game game = new Game(gameBoard, playerA, playerB);
+        Game game = new Game(gameState, playerA, playerB);
         game.start();
 
         ComputationGraphConfiguration config = new NeuralNetConfiguration.Builder()

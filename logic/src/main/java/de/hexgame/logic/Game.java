@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
 public class Game extends Thread {
-    private final GameBoard gameBoard;
+    private final GameState gameState;
     private final Player playerA;
     private final Player playerB;
 
@@ -13,14 +13,14 @@ public class Game extends Thread {
         Player playerToMove = playerA;
         Player otherPlayer = playerB;
 
-        while (gameBoard.getGameState() == GameState.IN_PROGRESS) {
-            Move move = playerToMove.think(gameBoard);
-            if (!gameBoard.isLegalMove(move)) {
+        while (!gameState.isFinished()) {
+            Move move = playerToMove.think(gameState);
+            if (!gameState.isLegalMove(move)) {
                 throw new IllegalStateException(
                         String.format("%s tried to play the illegal move %s", playerToMove.getName(), move)
                 );
             }
-            gameBoard.makeMove(move);
+            gameState.makeMove(move);
             Player tempPlayer = playerToMove;
             playerToMove = otherPlayer;
             otherPlayer = tempPlayer;
