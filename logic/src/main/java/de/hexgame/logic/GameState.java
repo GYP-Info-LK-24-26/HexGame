@@ -73,7 +73,7 @@ public class GameState implements Cloneable {
         }
     }
 
-    protected void makeMove(Move move) {
+    public void makeMove(Move move) {
         if (move.targetHexagon().isValid()) { // The target hexagon may be invalid for switching sides.
             setPiece(move.targetHexagon(), new Piece(sideToMove));
             switchSideToMove();
