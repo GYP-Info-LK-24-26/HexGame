@@ -7,7 +7,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @Getter
 @Setter
-public class Piece {
+public class Piece implements Cloneable {
     public enum Color {
         RED,
         BLUE
@@ -19,5 +19,14 @@ public class Piece {
 
     public Piece(Color color) {
         this(color, false, false);
+    }
+
+    @Override
+    public Piece clone() {
+        try {
+            return (Piece) super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
     }
 }

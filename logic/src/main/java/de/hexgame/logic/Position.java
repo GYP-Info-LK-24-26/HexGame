@@ -1,8 +1,12 @@
 package de.hexgame.logic;
 
-import static de.hexgame.logic.GameBoard.BOARD_SIZE;
+import static de.hexgame.logic.GameState.BOARD_SIZE;
 
 public record Position(int row, int column) {
+    public Position(int hexagonIndex) {
+        this(hexagonIndex / BOARD_SIZE, hexagonIndex % BOARD_SIZE);
+    }
+
     public int getIndex() {
         assert isValid();
         return row * BOARD_SIZE + column;
