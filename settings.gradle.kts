@@ -11,4 +11,4 @@ plugins {
 }
 
 rootProject.name = "HexGame"
-include("logic", "nn")
+include("logic", "nn", "algorithm")

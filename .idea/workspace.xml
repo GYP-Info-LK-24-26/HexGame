@@ -4,15 +4,18 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e1fb59b0-4b9b-49ce-9d3d-288688a3ac9f" name="Changes" comment="Code review review">
-      <change afterPath="$PROJECT_DIR$/nn/src/main/java/de/hexgame/nn/Main.java" afterDir="false" />
+    <list default="true" id="e1fb59b0-4b9b-49ce-9d3d-288688a3ac9f" name="Changes" comment="First Algorithm Layout">
+      <change afterPath="$PROJECT_DIR$/.idea/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/jarRepositories.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/uiDesigner.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/algorithm/src/main/java/de/hexgame/algorithm/Run.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/buildSrc/src/main/kotlin/buildlogic.java-conventions.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/buildSrc/src/main/kotlin/buildlogic.java-conventions.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/logic/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/logic/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/logic/src/main/java/de/hexgame/logic/GameBoard.java" beforeDir="false" afterPath="$PROJECT_DIR$/logic/src/main/java/de/hexgame/logic/GameBoard.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/nn/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/nn/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/algorithm/src/main/java/de/hexgame/algorithm/Root.java" beforeDir="false" afterPath="$PROJECT_DIR$/algorithm/src/main/java/de/hexgame/algorithm/Root.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/logic/src/main/java/de/hexgame/logic/Piece.java" beforeDir="false" afterPath="$PROJECT_DIR$/logic/src/main/java/de/hexgame/logic/Piece.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/settings.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/settings.gradle.kts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -38,17 +41,6 @@
                 <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
                 <item name="HexGame" type="f1a62948:ProjectNode" />
               </path>
-              <path>
-                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
-                <item name="HexGame" type="f1a62948:ProjectNode" />
-                <item name="Tasks" type="e4a08cd1:TasksNode" />
-              </path>
-              <path>
-                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
-                <item name="HexGame" type="f1a62948:ProjectNode" />
-                <item name="Tasks" type="e4a08cd1:TasksNode" />
-                <item name="application" type="c8890929:TasksNode$1" />
-              </path>
             </expand>
             <select />
           </tree_state>
@@ -67,7 +59,22 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="SET_USER_NAME_GLOBALLY" value="false" />
   </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;history&quot;: [
+    {
+      &quot;state&quot;: &quot;OPEN&quot;
+    }
+  ],
+  &quot;lastFilter&quot;: {}
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/GYP-Info-LK-24-26/HexGame&quot;,
+    &quot;accountId&quot;: &quot;4002d3a7-f52f-422c-bcd9-e31d63fe4e7b&quot;
+  }
+}</component>
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="DEPENDENCY_CHECKER_PROBLEMS_TAB" />
   </component>
@@ -75,37 +82,46 @@
   &quot;associatedIndex&quot;: 2
 }</component>
   <component name="ProjectId" id="2xRUVFeBQ2ZQIsmyB5xhsq1osDp" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Gradle.Download Sources.executor": "Run",
-    "Gradle.HexGame [build].executor": "Debug",
-    "Gradle.HexGame [clean].executor": "Run",
-    "Gradle.HexGame [run].executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "main",
-    "ignore.virus.scanning.warn.message": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/Finn/Documents/HexGame",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Gradle.Build HexGame.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Download Sources.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.HexGame [build].executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.HexGame [clean].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.HexGame [run].executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.de.hexgame.logic in HexGame.logic.main.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/Finn/Documents/HexGame&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;onboarding.tips.debug.path&quot;: &quot;C:/Users/sebas/Documents/Schule/Informatik/HexGame/algorithm/main/src/main/java/org/example/Main.java&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;reference.settingsdialog.project.gradle&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\sebas\Documents\Schule\Informatik\HexGame\algorithm\src" />
+      <recent name="C:\Users\sebas\Documents\Schule\Informatik\HexGame\algorithm\main\src" />
+      <recent name="C:\Users\sebas\Documents\Schule\Informatik\HexGame\algorithm" />
+      <recent name="C:\Users\sebas\Documents\Schule\Informatik\HexGame\algorithm\main" />
       <recent name="C:\Users\Finn\Documents\HexGame\logic\src\main\java" />
-      <recent name="C:\Users\Finn\Documents\HexGame\logic\src\main" />
     </key>
   </component>
-  <component name="RunManager" selected="Gradle.HexGame [run]">
+  <component name="RunManager" selected="JUnit.de.hexgame.logic in HexGame.logic.main">
     <configuration name="HexGame [build]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -172,21 +188,28 @@
       <RunAsTest>false</RunAsTest>
       <method v="2" />
     </configuration>
+    <configuration name="de.hexgame.logic in HexGame.logic.main" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="HexGame.logic.main" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="de.hexgame.logic.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="de.hexgame.logic" />
+      <option name="TEST_OBJECT" value="package" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="JUnit.de.hexgame.logic in HexGame.logic.main" />
         <item itemvalue="Gradle.HexGame [run]" />
         <item itemvalue="Gradle.HexGame [clean]" />
         <item itemvalue="Gradle.HexGame [build]" />
       </list>
     </recent_temporary>
-  </component>
-  <component name="SharedIndexes">
-    <attachedChunks>
-      <set>
-        <option value="bundled-jdk-9823dce3aa75-a94e463ab2e7-intellij.indexing.shared.core-IU-243.26053.27" />
-        <option value="bundled-js-predefined-d6986cc7102b-1632447f56bf-JavaScript-IU-243.26053.27" />
-      </set>
-    </attachedChunks>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -209,14 +232,34 @@
       <option name="project" value="LOCAL" />
       <updated>1747930485649</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="First Algorithm Layout">
+      <option name="closed" value="true" />
+      <created>1748090233232</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1748090233232</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Code review review" />
-    <option name="LAST_COMMIT_MESSAGE" value="Code review review" />
+    <MESSAGE value="First Algorithm Layout" />
+    <option name="LAST_COMMIT_MESSAGE" value="First Algorithm Layout" />
   </component>
 </project>

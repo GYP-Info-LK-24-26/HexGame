@@ -8,25 +8,22 @@ import lombok.Getter;
 
 
 public class Root {
-    public enum Acolor {
-        RED,
-        BLUE
-    }
 
     private Piece[][] pieces;
     @Getter
-    private static Acolor color;
-    private GameState gameState;
-    private int board;
+    private static Piece.Color color;
+    private final GameState gameState;
+    private final int board;
 
 
-    public Root(Acolor acolor) {
+    public Root(Piece[][] pieces, Piece.Color acolor) {
+        this.pieces = pieces;
         color = acolor;
         gameState = new GameState();
         board = GameState.BOARD_SIZE;
     }
 
-    public void addpossibleNodes() {
+    public void addPossibleNodes() {
         Position position;
 
         for (int i = 0; i < board; i++) {
@@ -47,27 +44,38 @@ public class Root {
         }
     }
 
-    public Position bestPiece() {
+    public Position bestPosition(Piece.Color acolor) {
         Position bestPosition = null;
         double bestRating = -2147483648;
         double calcRating = 0;
+        Piece.Color usedColor = acolor;
+
+        //If not the color of the algorithm-side should be accumulated
+        if (acolor == null) {
+            usedColor = color;
+        }
 
         for (int i = 0; i < board; i++) {
             for (int j = 0; j < board; j++) {
+                Position position = new Position(i, j); //Possible postion
                 if (pieces[i][j] == null){
                     continue;
                 }
-                Position position = new Position(i, j);
-                for (Direction direction : Direction.ALL) {
+
+                for (Direction direction : Direction.ALL) { //Neighbouring Pieces to the possible position
                     Position tempPosition = position.add(direction);
+                    Piece tempPiece = gameState.getPiece(tempPosition);
                     double tempRating = 0;
+
+                    //Evaluating the usefulness of the neighbouring piece of the possible position
                     if (!tempPosition.isValid()) {
                         continue;
                     }
-                    if (gameState.getPiece(tempPosition).getColor().equals(null)) {
+
+                    if (tempPiece.getColor().equals(null)) {
                         tempRating++;
-                    } else if (gameState.getPiece(tempPosition).getColor().equals(color)) {
-                        if (gameState.getPiece(tempPosition).isConnectedHigh() || gameState.getPiece(tempPosition).isConnectedLow()) {
+                    } else if (tempPiece.getColor().equals(usedColor)) {
+                        if (tempPiece.isConnectedHigh() || tempPiece.isConnectedLow()) {
                             tempRating = tempRating + 20;
                         }
                         else {
@@ -75,16 +83,17 @@ public class Root {
                         }
                     }
                     else {
-                        if (gameState.getPiece(tempPosition).isConnectedHigh() || gameState.getPiece(tempPosition).isConnectedLow()) {
+                        if (tempPiece.isConnectedHigh() || tempPiece.isConnectedLow()) {
                             tempRating = tempRating + 15;
                         }
                         else {
                             tempRating = tempRating -5;
                         }
                     }
-                    tempRating = tempRating + Math.random() * 0.1;
-                    calcRating = calcRating + tempRating;
+                    tempRating = tempRating + Math.random();
+                    calcRating = calcRating + tempRating; //Adding the value of the neighbour to the value of the possible position
                 }
+                //Checking if possible position is better than the best position
                 if (calcRating > bestRating) {
                     bestRating = calcRating;
                     bestPosition = position;
