@@ -4,19 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e1fb59b0-4b9b-49ce-9d3d-288688a3ac9f" name="Changes" comment="First Algorithm Layout">
-      <change afterPath="$PROJECT_DIR$/.idea/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/jarRepositories.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/uiDesigner.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/algorithm/src/main/java/de/hexgame/algorithm/Run.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="e1fb59b0-4b9b-49ce-9d3d-288688a3ac9f" name="Changes" comment="QoL improvements and comments">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/algorithm/src/main/java/de/hexgame/algorithm/Root.java" beforeDir="false" afterPath="$PROJECT_DIR$/algorithm/src/main/java/de/hexgame/algorithm/Root.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/logic/src/main/java/de/hexgame/logic/Piece.java" beforeDir="false" afterPath="$PROJECT_DIR$/logic/src/main/java/de/hexgame/logic/Piece.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/settings.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/settings.gradle.kts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -76,7 +65,7 @@
   }
 }</component>
   <component name="ProblemsViewState">
-    <option name="selectedTabId" value="DEPENDENCY_CHECKER_PROBLEMS_TAB" />
+    <option name="selectedTabId" value="CurrentFile" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 2
@@ -240,7 +229,15 @@
       <option name="project" value="LOCAL" />
       <updated>1748090233232</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="QoL improvements and comments">
+      <option name="closed" value="true" />
+      <created>1748181122259</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1748181122259</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -260,6 +257,7 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Code review review" />
     <MESSAGE value="First Algorithm Layout" />
-    <option name="LAST_COMMIT_MESSAGE" value="First Algorithm Layout" />
+    <MESSAGE value="QoL improvements and comments" />
+    <option name="LAST_COMMIT_MESSAGE" value="QoL improvements and comments" />
   </component>
 </project>
