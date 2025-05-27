@@ -3,6 +3,10 @@ package de.hexgame.logic;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
+/**
+ * this is one possibility to implement a Player<br>
+ * this is the simplest of algorithms as it randomly picks a legal move
+ */
 public class RandomPlayer implements Player {
     private static int INSTANCE_COUNTER = 0;
 

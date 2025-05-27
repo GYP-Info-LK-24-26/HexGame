@@ -2,8 +2,13 @@ package de.hexgame.logic;
 
 import lombok.AllArgsConstructor;
 
+/**
+ *
+ * This class may be run as a thread to play a game<br> the players have to be provided
+ */
 @AllArgsConstructor
 public class Game extends Thread {
+    public static final int VERSION = 7;
     private final GameState gameState;
     private final Player playerA;
     private final Player playerB;
