@@ -9,8 +9,16 @@
         </processorPath>
         <module name="HexGame.logic.main" />
         <module name="HexGame.nn.main" />
+        <module name="HexGame.algorithm.main" />
+        <module name="HexGame.algorithm.test" />
         <module name="HexGame.nn.test" />
         <module name="HexGame.logic.test" />
+      </profile>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="main" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel target="21" />

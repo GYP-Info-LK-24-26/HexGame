@@ -12,7 +12,6 @@ public class Piece implements Cloneable {
         RED,
         BLUE
     }
-
     private Color color;
     private boolean connectedLow;
     private boolean connectedHigh;
