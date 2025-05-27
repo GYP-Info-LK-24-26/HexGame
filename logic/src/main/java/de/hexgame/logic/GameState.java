@@ -8,6 +8,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+
+/**
+ * This is the class that runs the Game, used by {@link Game}
+ */
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class GameState implements Cloneable {
     public static final int BOARD_SIZE = 11;
@@ -32,6 +36,10 @@ public class GameState implements Cloneable {
         return pieces[position.getIndex()];
     }
 
+    /**
+     * is O(n²) complexity
+     * @return all moves that can be made
+     */
     public List<Move> getLegalMoves() {
         List<Move> legalMoves = new ArrayList<>();
         if (halfMoveCounter == 1) {
@@ -73,6 +81,7 @@ public class GameState implements Cloneable {
         }
     }
 
+    //this makes a move,it also accommodates the change of color by a player by not switching the color that is currently at play
     public void makeMove(Move move) {
         if (move.targetHexagon().isValid()) { // The target hexagon may be invalid for switching sides.
             setPiece(move.targetHexagon(), new Piece(sideToMove));
@@ -89,6 +98,7 @@ public class GameState implements Cloneable {
         }
     }
 
+    //updates the connected pieces so that the connection states are up to play
     private void update(Position position) {
         Piece piece = getPiece(position);
         if (piece.getColor() == Piece.Color.RED) {
@@ -108,6 +118,10 @@ public class GameState implements Cloneable {
         updateConnections(position);
     }
 
+    /**
+     * recursive function to update the connecting states of all neighbouring pieces
+     * @param position the position to be updated
+     */
     private void updateConnections(Position position) {
         Piece piece = getPiece(position);
 
