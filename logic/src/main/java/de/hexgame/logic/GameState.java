@@ -24,6 +24,7 @@ public class GameState implements Cloneable {
     @Getter
     /// counts the number of individual moves made
     private int halfMoveCounter;
+    private Position lastChangedPosition;
 
     public GameState() {
         pieces = new Piece[BOARD_SIZE * BOARD_SIZE];
@@ -43,7 +44,7 @@ public class GameState implements Cloneable {
     public List<Move> getLegalMoves() {
         List<Move> legalMoves = new ArrayList<>();
         if (halfMoveCounter == 1) {
-            legalMoves.add(new Move(new Position(-1, -1)));
+            legalMoves.add(new Move(lastChangedPosition));
         }
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int column = 0; column < BOARD_SIZE; column++) {
@@ -83,6 +84,7 @@ public class GameState implements Cloneable {
 
     //this makes a move,it also accommodates the change of color by a player by not switching the color that is currently at play
     public void makeMove(Move move) {
+        lastChangedPosition = move.targetHexagon();
         if (move.targetHexagon().isValid()) { // The target hexagon may be invalid for switching sides.
             setPiece(move.targetHexagon(), new Piece(sideToMove));
             switchSideToMove();
