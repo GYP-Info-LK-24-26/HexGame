@@ -25,12 +25,23 @@ public class GameState implements Cloneable {
     /// counts the number of individual moves made
     private int halfMoveCounter;
     private Position lastChangedPosition;
+    //keeps track of every listener hook
+    private List<PlayerMoveListener> playerMoveListeners;
+
+    /**
+     * this adds a listener for player moves
+     * @param playerMoveListener the listener
+     */
+    public void addPlayerMoveListener(PlayerMoveListener playerMoveListener) {
+        if(playerMoveListeners != null)playerMoveListeners.add(playerMoveListener);
+    }
 
     public GameState() {
         pieces = new Piece[BOARD_SIZE * BOARD_SIZE];
         finished = false;
         sideToMove = Piece.Color.RED;
         halfMoveCounter = 0;
+        playerMoveListeners = new ArrayList<>();
     }
 
     public Piece getPiece(Position position) {
@@ -73,7 +84,7 @@ public class GameState implements Cloneable {
         update(position);
     }
 
-    protected boolean isLegalMove(Move move) {
+    public boolean isLegalMove(Move move) {
         Position targetPosition = move.targetHexagon();
         if (targetPosition.isValid()) {
             return getPiece(targetPosition) == null;
@@ -84,11 +95,15 @@ public class GameState implements Cloneable {
 
     //this makes a move,it also accommodates the change of color by a player by not switching the color that is currently at play
     public void makeMove(Move move) {
-        lastChangedPosition = move.targetHexagon();
-        if (move.targetHexagon().isValid()) { // The target hexagon may be invalid for switching sides.
+        if (isLegalMove(move)) { // The target hexagon may be invalid for switching sides.
             setPiece(move.targetHexagon(), new Piece(sideToMove));
             switchSideToMove();
-        }
+        }else if(!move.targetHexagon().equals(lastChangedPosition))
+            throw new IllegalStateException(
+                String.format("%s tried to play the illegal move %s", sideToMove, move)
+        );
+        lastChangedPosition = move.targetHexagon();
+        playerMoveListeners.forEach(listener -> listener.onPlayerMove(move.targetHexagon()));
         halfMoveCounter++;
     }
 

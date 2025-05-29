@@ -1,6 +1,7 @@
 package de.hexgame.logic;
 
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 
 /**
  *
@@ -9,9 +10,16 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class Game extends Thread {
     public static final int VERSION = 7;
+    @Getter
     private final GameState gameState;
     private final Player playerA;
     private final Player playerB;
+
+    public Game(Player playerA, Player playerB) {
+        this.gameState = new GameState();
+        this.playerA = playerA;
+        this.playerB = playerB;
+    }
 
     @Override
     public void run() {
