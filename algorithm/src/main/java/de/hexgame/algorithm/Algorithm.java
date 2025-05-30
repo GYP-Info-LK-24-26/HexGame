@@ -1,26 +1,22 @@
 package de.hexgame.algorithm;
 
-import de.hexgame.logic.Direction;
+import de.hexgame.logic.*;
 import de.hexgame.logic.GameState;
-import de.hexgame.logic.Piece;
-import de.hexgame.logic.Position;
 import lombok.Getter;
 
 
-public class Root {
+public class Algorithm {
 
     private Piece[][] pieces;
     @Getter
-    private static Piece.Color color;
     private final GameState gameState;
     private final int board;
 
 
-    public Root(Piece[][] pieces, Piece.Color acolor) {
-        this.pieces = pieces;
-        color = acolor;
+    public Algorithm() {
         gameState = new GameState();
         board = GameState.BOARD_SIZE;
+        clear();
     }
 
     public void addPossibleNodes() {
@@ -29,7 +25,7 @@ public class Root {
         for (int i = 0; i < board; i++) {
             for (int j = 0; j < board; j++) {
                 position = new Position(i, j);
-                if (gameState.getPiece(position).getColor() == null) {
+                if (gameState.getPiece(position) == null) {
                     pieces[i][j] = gameState.getPiece(position);
                 }
             }
@@ -44,16 +40,11 @@ public class Root {
         }
     }
 
-    public Position bestPosition(Piece.Color acolor) {
+    public Position bestPosition(Piece.Color usedColor) {
         Position bestPosition = null;
-        double bestRating = -2147483648;
+        double bestRating = Double.MIN_VALUE;
         double calcRating = 0;
-        Piece.Color usedColor = acolor;
 
-        //If not the color of the algorithm-side should be accumulated
-        if (acolor == null) {
-            usedColor = color;
-        }
 
         for (int i = 0; i < board; i++) {
             for (int j = 0; j < board; j++) {
@@ -72,7 +63,7 @@ public class Root {
                         continue;
                     }
 
-                    if (tempPiece.getColor().equals(null)) {
+                    if (tempPiece.equals(null)) {
                         tempRating++;
                     } else if (tempPiece.getColor().equals(usedColor)) {
                         if (tempPiece.isConnectedHigh() || tempPiece.isConnectedLow()) {
