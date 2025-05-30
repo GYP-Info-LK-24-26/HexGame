@@ -11,4 +11,4 @@ plugins {
 }
 
 rootProject.name = "HexGame"
-include("logic","ui", "nn", "algorithm")
+include("logic","ui", "nn", "algorithm","ui:IgelEngine")

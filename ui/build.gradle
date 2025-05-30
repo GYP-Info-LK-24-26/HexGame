@@ -36,11 +36,12 @@ switch (org.gradle.internal.os.OperatingSystem.current()) {
 
 dependencies {
     implementation project(':logic')
+    implementation project(':ui:IgelEngine')
     //implementation 'com.github.jitpack:gradle-simple:2.0'
     testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     //implementation "com.github.EinePerson:IgelEngine:$engine_version"
-    implementation files("libs/IgelEngine-v2.2.1-alpha.jar")
+    //implementation files("libs/IgelEngine-v2.2.1-alpha.jar")
 
 
     implementation "org.lwjgl:lwjgl"
@@ -68,6 +69,8 @@ dependencies {
 
     implementation platform("org.lwjgl:lwjgl-bom:$lwjgl_version")
     implementation "org.joml:joml:$joml_version"
+
+
 }
 
 application {
@@ -77,3 +80,5 @@ application {
 jar {
     mainClassName "de.igelstudios.ClientMain"
 }
+
+
