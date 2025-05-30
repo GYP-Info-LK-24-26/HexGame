@@ -126,7 +126,7 @@ public class UIGameBoard implements PlayerMoveListener, KeyListener, MouseMoveLi
         if(!pressed)return;
         Position pos = Util.convertToGameCords(mouseX, mouseY);
         Move move = new Move(pos);
-        if(!gameState.isLegalMove(move))localPlayer.makeMove(move);
+        if(gameState.isLegalMove(move))localPlayer.makeMove(move);
 
     }
 
