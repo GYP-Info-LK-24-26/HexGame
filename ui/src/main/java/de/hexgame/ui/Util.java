@@ -8,6 +8,6 @@ public class Util {
         int yRow = (int) Math.round((44 - y) / 1.5);
         yRow = Math.max(yRow,0);
         int xRow = (int) Math.floor(x - (double) yRow / 2);
-        return new Position(xRow, yRow);
+        return new Position(yRow, xRow);
     }
 }

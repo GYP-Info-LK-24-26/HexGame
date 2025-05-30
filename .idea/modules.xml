@@ -2,19 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/HexGame.iml" filepath="$PROJECT_DIR$/.idea/modules/HexGame.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/algorithm/HexGame.algorithm.iml" filepath="$PROJECT_DIR$/.idea/modules/algorithm/HexGame.algorithm.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/algorithm/HexGame.algorithm.main.iml" filepath="$PROJECT_DIR$/.idea/modules/algorithm/HexGame.algorithm.main.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/algorithm/HexGame.algorithm.test.iml" filepath="$PROJECT_DIR$/.idea/modules/algorithm/HexGame.algorithm.test.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/buildSrc/HexGame.buildSrc.iml" filepath="$PROJECT_DIR$/.idea/modules/buildSrc/HexGame.buildSrc.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/buildSrc/HexGame.buildSrc.main.iml" filepath="$PROJECT_DIR$/.idea/modules/buildSrc/HexGame.buildSrc.main.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/buildSrc/HexGame.buildSrc.test.iml" filepath="$PROJECT_DIR$/.idea/modules/buildSrc/HexGame.buildSrc.test.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/logic/HexGame.logic.iml" filepath="$PROJECT_DIR$/.idea/modules/logic/HexGame.logic.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/logic/HexGame.logic.main.iml" filepath="$PROJECT_DIR$/.idea/modules/logic/HexGame.logic.main.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/logic/HexGame.logic.test.iml" filepath="$PROJECT_DIR$/.idea/modules/logic/HexGame.logic.test.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/nn/HexGame.nn.iml" filepath="$PROJECT_DIR$/.idea/modules/nn/HexGame.nn.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/nn/HexGame.nn.main.iml" filepath="$PROJECT_DIR$/.idea/modules/nn/HexGame.nn.main.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/nn/HexGame.nn.test.iml" filepath="$PROJECT_DIR$/.idea/modules/nn/HexGame.nn.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/ui/HexGame.ui.main.iml" filepath="$PROJECT_DIR$/.idea/modules/ui/HexGame.ui.main.iml" />
     </modules>
   </component>
 </project>

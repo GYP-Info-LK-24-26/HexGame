@@ -113,10 +113,10 @@ public class UIGameBoard implements PlayerMoveListener, KeyListener, MouseMoveLi
         }
         if(gameState.getPiece(move).getColor() == Piece.Color.RED){
             SceneObject obj = new SceneObject().setTex(TexturePool.getID("red_hex.png")).setSize(new Vector2f(1,2));
-            Renderer.get().render(obj, (float) move.column() / 2 + move.row(), (float) (43 - (move.column() * 1.5)));
+            Renderer.get().render(obj, (float) move.row() / 2 + move.column(), (float) (43 - (move.row() * 1.5)));
         }else{
             SceneObject obj = new SceneObject().setTex(TexturePool.getID("blue_hex.png")).setSize(new Vector2f(1,2));
-            Renderer.get().render(obj, (float) move.column() / 2 + move.row(), (float) (43 - (move.column() * 1.5)));
+            Renderer.get().render(obj, (float) move.row() / 2 + move.column(), (float) (43 - (move.row() * 1.5)));
         }
         last_time_run = System.currentTimeMillis();
     }
