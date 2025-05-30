@@ -1,0 +1,3 @@
+[submodule "ui/IgelEngine"]
+	path = ui/IgelEngine
+	url = https://github.com/EinePerson/IgelEngine

@@ -1,0 +1,5 @@
+{
+  "main": "de.hexgame.ui.Initializer",
+  "default_lang": "en_us",
+  "name": "hexgame"
+}
