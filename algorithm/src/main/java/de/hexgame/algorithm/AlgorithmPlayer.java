@@ -6,10 +6,10 @@ import de.hexgame.logic.Player;
 
 public class AlgorithmPlayer implements Player {
 
-    private final Run run;
+    private final Run calculate;
 
     public AlgorithmPlayer() {
-        run = new Run();
+        calculate = new Run();
     }
 
     @Override
@@ -19,6 +19,6 @@ public class AlgorithmPlayer implements Player {
 
     @Override
     public Move think(GameState gameState) {
-        return new Move(run.start(gameState.getSideToMove()));
+        return new Move(calculate.start(gameState.getSideToMove()));
     }
 }
