@@ -4,9 +4,7 @@ import de.hexgame.logic.*;
 
 import de.igelstudios.igelengine.client.graphics.Renderer;
 import de.igelstudios.igelengine.client.graphics.texture.TexturePool;
-import de.igelstudios.igelengine.client.keys.KeyHandler;
-import de.igelstudios.igelengine.client.keys.KeyListener;
-import de.igelstudios.igelengine.client.keys.MouseMoveListener;
+import de.igelstudios.igelengine.client.keys.*;
 import de.igelstudios.igelengine.common.scene.SceneObject;
 import org.joml.Vector2f;
 
@@ -15,8 +13,7 @@ import static java.lang.Thread.sleep;
 /**
  * this class is instanced eg only one instance may exist during one runtime available via {@link UIGameBoard#get()}
  */
-public class UIGameBoard implements PlayerMoveListener, KeyListener, MouseMoveListener {
-    private double mouseX, mouseY;
+public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
     private static UIGameBoard instance;
     private GameState gameState;
     //this is the time that has pass between turn to avoid graphical overloading
@@ -34,6 +31,7 @@ public class UIGameBoard implements PlayerMoveListener, KeyListener, MouseMoveLi
     //to minimize the numbers of sampler textures are used twice and rotated
     //this case
     public void startRendering(){
+        HIDInput.activateListener(this);
         TexturePool.getID("red_hex.png");
         TexturePool.getID("blue_hex.png");
 
@@ -122,17 +120,11 @@ public class UIGameBoard implements PlayerMoveListener, KeyListener, MouseMoveLi
     }
 
     @KeyHandler("LMB")
-    public void lmb(boolean pressed){
+    public void lmb(boolean pressed,double x,double y){
         if(!pressed)return;
-        Position pos = Util.convertToGameCords(mouseX, mouseY);
+        Position pos = Util.convertToGameCords(x, y);
         Move move = new Move(pos);
         if(gameState.isLegalMove(move))localPlayer.makeMove(move);
 
-    }
-
-    @Override
-    public void mouseMove(double x, double y) {
-        mouseX = x;
-        mouseY = y;
     }
 }
