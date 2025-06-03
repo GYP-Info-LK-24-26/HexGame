@@ -24,7 +24,7 @@ public class Algorithm {
         for (int i = 0; i < board; i++) {
             for (int j = 0; j < board; j++) {
                 position = new Position(i, j);
-                if (gameState.getPiece(position) == null) {
+                if (gameState.getPiece(position) != null) {
                     pieces[i][j] = gameState.getPiece(position);
                 }
             }
@@ -47,15 +47,13 @@ public class Algorithm {
 
         for (int i = 0; i < board; i++) {
             for (int j = 0; j < board; j++) {
-                if (pieces[i][j] == null){
+                if (pieces[i][j] != null){
                     continue;
                 }
                 Position position = new Position(i, j); //Possible postion
 
-                for (Direction direction : Direction.ALL) { //Neighbouring Pieces to the possible position
-                    Position tempPosition = position.add(direction);
-                    calcRating = calculateRating(tempPosition, usedColor);
-                }
+                calcRating = calculatePieceRating(position, usedColor);
+
                 //Checking if possible position is better than the best position
                 if (calcRating > bestRating) {
                     bestRating = calcRating;
@@ -68,7 +66,7 @@ public class Algorithm {
     }
 
     public double calculateRating(Position position, Piece.Color usedColor) {
-        double tempRating = Double.NEGATIVE_INFINITY;
+        double tempRating = 0;
         Piece tempPiece = gameState.getPiece(position);
 
         if (!position.isValid()) {
@@ -95,6 +93,17 @@ public class Algorithm {
         return tempRating;
     }
 
+    public double calculatePieceRating(Position position, Piece.Color usedColor) {
+        double rating = 0;
+        Position tempPosition;
+
+        for (Direction direction: Direction.ALL) {
+            tempPosition = position.add(direction);
+            rating = rating + calculateRating(tempPosition, usedColor);
+        }
+        return rating;
+    }
+
     public Position bestPositionIn2(Piece.Color usedColor) {
         Position bestPostion = null;
         Position tempPositon;
@@ -102,7 +111,6 @@ public class Algorithm {
         Position tempDirectionPostiton;
         Position tempOtherColorDirectionPostion;
         Position tempSameColorPosition;
-        Position tempSameColorDirectionPostion;
         Piece dummyPiece;
         Piece dummyOtherColorPiece;
         double bestRating = Double.NEGATIVE_INFINITY;
@@ -122,57 +130,68 @@ public class Algorithm {
 
         for (int i = 0; i < board; i++) {
             for (int j = 0; j < board; j++) {
-                if (pieces[i][j] == null) {
+                if (pieces[i][j] != null) {
                     continue;
                 }
+
                 tempPositon = new Position(i, j);
-                dummyPiece = new Piece(usedColor);
+                dummyPiece = gameState.getPiece(new Position(i, j));
+
 
                 for (Direction direction: Direction.ALL){
                     tempDirectionPostiton = tempPositon.add(direction);
                     tempRating = tempRating + calculateRating(tempDirectionPostiton, usedColor);
+                    if (gameState.getPiece(tempDirectionPostiton).isConnectedLow()) {
+                        dummyPiece.setConnectedLow(true);
+                    }
+                    if (gameState.getPiece(tempDirectionPostiton).isConnectedHigh()) {
+                        dummyPiece.setConnectedHigh(true);
+                    }
                 }
 
                 for (int k = 0; k < board; k++) {
                     for (int l = 0; l < board; l++) {
-                        if (pieces[k][l] == null || pieces[k][l] == dummyPiece) {
+                        if (pieces[k][l] != null) {
                             counterFreePieces--;
                             continue;
                         }
                         tempOtherColorPosition = new Position(k, l);
-                        dummyOtherColorPiece = new Piece(otherColor);
+                        dummyOtherColorPiece = gameState.getPiece(new Position(k, l));
 
                         for (Direction otherColorDirection: Direction.ALL){
                             tempOtherColorDirectionPostion = tempOtherColorPosition.add(otherColorDirection);
                             tempOtherColorRating = tempOtherColorRating + calculateRating(tempOtherColorDirectionPostion, otherColor);
+                            if (gameState.getPiece(tempOtherColorDirectionPostion).isConnectedLow()) {
+                                dummyOtherColorPiece.setConnectedLow(true);
+                            }
+                            if (gameState.getPiece(tempOtherColorDirectionPostion).isConnectedHigh()) {
+                                dummyOtherColorPiece.setConnectedHigh(true);
+                            }
                         }
 
                         for (int m = 0; m < board; m++) {
                             for (int n = 0; n < board; n++) {
-                                if (pieces[m][n] == null || pieces[m][n] == dummyPiece || pieces[m][n] == dummyOtherColorPiece) {
+                                if (pieces[m][n] != null) {
                                     counterFreePiecesSameColor--;
                                     continue;
                                 }
                                 tempSameColorPosition = new Position(m, n);
 
-                                for (Direction sameColorDirection: Direction.ALL) {
-                                    tempSameColorDirectionPostion = tempSameColorPosition.add(sameColorDirection);
-                                    tempSameColorRating = tempSameColorRating + calculateRating(tempSameColorDirectionPostion, usedColor);
-                                }
+                                tempSameColorRating = calculatePieceRating(tempSameColorPosition, usedColor);
                             }
                         }
-                    }
+                        dummyOtherColorPiece = null;
+                   }
                 }
-                tempRating = tempRating + (tempOtherColorRating / counterFreePieces) + (tempSameColorRating / (counterFreePiecesSameColor * counterFreePieces));
+                tempRating = tempRating - (tempOtherColorRating / counterFreePieces) + (tempSameColorRating / (counterFreePiecesSameColor * counterFreePieces));
 
                 if (tempRating > bestRating) {
                     bestRating = tempRating;
                     bestPostion = tempPositon;
                 }
+                dummyPiece = null;
             }
         }
-        dummyPiece = null;
-        dummyOtherColorPiece = null;
         return bestPostion;
     }
 

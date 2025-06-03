@@ -11,10 +11,15 @@ public class Run {
         algorithm = new Algorithm();
     }
 
-    public Position start(Piece.Color acolor) {
+    public Position start(Piece.Color acolor, int movesToCalculate) {
         Position temp;
         algorithm.addPossibleNodes();
-        temp = algorithm.bestPosition(acolor);
+        if (movesToCalculate == 1) {
+            temp = algorithm.bestPosition(acolor);
+        }
+        else {
+            temp = algorithm.bestPositionIn2(acolor);
+        }
         algorithm.clear();
         return temp;
     }
