@@ -4,7 +4,6 @@ import de.hexgame.logic.*;
 import de.hexgame.logic.GameState;
 import lombok.Getter;
 
-
 public class Algorithm {
 
     private Piece[][] pieces;
@@ -25,7 +24,7 @@ public class Algorithm {
         for (int i = 0; i < board; i++) {
             for (int j = 0; j < board; j++) {
                 position = new Position(i, j);
-                if (gameState.getPiece(position) == null) {
+                if (gameState.getPiece(position) != null) {
                     pieces[i][j] = gameState.getPiece(position);
                 }
             }
@@ -42,48 +41,19 @@ public class Algorithm {
 
     public Position bestPosition(Piece.Color usedColor) {
         Position bestPosition = null;
-        double bestRating = Double.MIN_VALUE;
+        double bestRating = Double.NEGATIVE_INFINITY;
         double calcRating = 0;
 
 
         for (int i = 0; i < board; i++) {
             for (int j = 0; j < board; j++) {
-                Position position = new Position(i, j); //Possible postion
-                if (pieces[i][j] == null){
+                if (pieces[i][j] != null){
                     continue;
                 }
+                Position position = new Position(i, j); //Possible postion
 
-                for (Direction direction : Direction.ALL) { //Neighbouring Pieces to the possible position
-                    Position tempPosition = position.add(direction);
-                    Piece tempPiece = gameState.getPiece(tempPosition);
-                    double tempRating = 0;
+                calcRating = calculatePieceRating(position, usedColor);
 
-                    //Evaluating the usefulness of the neighbouring piece of the possible position
-                    if (!tempPosition.isValid()) {
-                        continue;
-                    }
-
-                    if (tempPiece.equals(null)) {
-                        tempRating++;
-                    } else if (tempPiece.getColor().equals(usedColor)) {
-                        if (tempPiece.isConnectedHigh() || tempPiece.isConnectedLow()) {
-                            tempRating = tempRating + 20;
-                        }
-                        else {
-                            tempRating = tempRating + 10;
-                        }
-                    }
-                    else {
-                        if (tempPiece.isConnectedHigh() || tempPiece.isConnectedLow()) {
-                            tempRating = tempRating + 15;
-                        }
-                        else {
-                            tempRating = tempRating -5;
-                        }
-                    }
-                    tempRating = tempRating + Math.random();
-                    calcRating = calcRating + tempRating; //Adding the value of the neighbour to the value of the possible position
-                }
                 //Checking if possible position is better than the best position
                 if (calcRating > bestRating) {
                     bestRating = calcRating;
@@ -94,4 +64,135 @@ public class Algorithm {
         }
         return bestPosition;
     }
+
+    public double calculateRating(Position position, Piece.Color usedColor) {
+        double tempRating = 0;
+        Piece tempPiece = gameState.getPiece(position);
+
+        if (!position.isValid()) {
+            return tempRating;
+        }
+
+        if (tempPiece.equals(null)) {
+            tempRating++;
+        } else if (tempPiece.getColor().equals(usedColor)) {
+            if (tempPiece.isConnectedHigh() || tempPiece.isConnectedLow()) {
+                tempRating = tempRating + 20;
+            } else {
+                tempRating = tempRating + 10;
+            }
+        } else {
+            if (tempPiece.isConnectedHigh() || tempPiece.isConnectedLow()) {
+                tempRating = tempRating + 15;
+            } else {
+                tempRating = tempRating - 5;
+            }
+        }
+
+        tempRating = tempRating + Math.random();
+        return tempRating;
+    }
+
+    public double calculatePieceRating(Position position, Piece.Color usedColor) {
+        double rating = 0;
+        Position tempPosition;
+
+        for (Direction direction: Direction.ALL) {
+            tempPosition = position.add(direction);
+            rating = rating + calculateRating(tempPosition, usedColor);
+        }
+        return rating;
+    }
+
+    public Position bestPositionIn2(Piece.Color usedColor) {
+        Position bestPostion = null;
+        Position tempPositon;
+        Position tempOtherColorPosition;
+        Position tempDirectionPostiton;
+        Position tempOtherColorDirectionPostion;
+        Position tempSameColorPosition;
+        Piece dummyPiece;
+        Piece dummyOtherColorPiece;
+        double bestRating = Double.NEGATIVE_INFINITY;
+        double tempRating = 0;
+        double tempOtherColorRating = 0;
+        double tempSameColorRating = 0;
+        int counterFreePieces = board * board;
+        int counterFreePiecesSameColor = board * board;
+        Piece.Color otherColor;
+
+        if (usedColor == Piece.Color.BLUE) {
+            otherColor = Piece.Color.RED;
+        }
+        else {
+            otherColor = Piece.Color.BLUE;
+        }
+
+        for (int i = 0; i < board; i++) {
+            for (int j = 0; j < board; j++) {
+                if (pieces[i][j] != null) {
+                    continue;
+                }
+
+                tempPositon = new Position(i, j);
+                dummyPiece = gameState.getPiece(new Position(i, j));
+
+
+                for (Direction direction: Direction.ALL){
+                    tempDirectionPostiton = tempPositon.add(direction);
+                    tempRating = tempRating + calculateRating(tempDirectionPostiton, usedColor);
+                    if (gameState.getPiece(tempDirectionPostiton).isConnectedLow()) {
+                        dummyPiece.setConnectedLow(true);
+                    }
+                    if (gameState.getPiece(tempDirectionPostiton).isConnectedHigh()) {
+                        dummyPiece.setConnectedHigh(true);
+                    }
+                }
+
+                for (int k = 0; k < board; k++) {
+                    for (int l = 0; l < board; l++) {
+                        if (pieces[k][l] != null) {
+                            counterFreePieces--;
+                            continue;
+                        }
+                        tempOtherColorPosition = new Position(k, l);
+                        dummyOtherColorPiece = gameState.getPiece(new Position(k, l));
+
+                        for (Direction otherColorDirection: Direction.ALL){
+                            tempOtherColorDirectionPostion = tempOtherColorPosition.add(otherColorDirection);
+                            tempOtherColorRating = tempOtherColorRating + calculateRating(tempOtherColorDirectionPostion, otherColor);
+                            if (gameState.getPiece(tempOtherColorDirectionPostion).isConnectedLow()) {
+                                dummyOtherColorPiece.setConnectedLow(true);
+                            }
+                            if (gameState.getPiece(tempOtherColorDirectionPostion).isConnectedHigh()) {
+                                dummyOtherColorPiece.setConnectedHigh(true);
+                            }
+                        }
+
+                        for (int m = 0; m < board; m++) {
+                            for (int n = 0; n < board; n++) {
+                                if (pieces[m][n] != null) {
+                                    counterFreePiecesSameColor--;
+                                    continue;
+                                }
+                                tempSameColorPosition = new Position(m, n);
+
+                                tempSameColorRating = calculatePieceRating(tempSameColorPosition, usedColor);
+                            }
+                        }
+                        dummyOtherColorPiece = null;
+                   }
+                }
+                tempRating = tempRating - (tempOtherColorRating / counterFreePieces) + (tempSameColorRating / (counterFreePiecesSameColor * counterFreePieces));
+
+                if (tempRating > bestRating) {
+                    bestRating = tempRating;
+                    bestPostion = tempPositon;
+                }
+                dummyPiece = null;
+            }
+        }
+        return bestPostion;
+    }
+
 }
