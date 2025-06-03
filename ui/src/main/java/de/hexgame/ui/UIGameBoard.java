@@ -6,6 +6,7 @@ import de.igelstudios.igelengine.client.graphics.Renderer;
 import de.igelstudios.igelengine.client.graphics.texture.TexturePool;
 import de.igelstudios.igelengine.client.keys.*;
 import de.igelstudios.igelengine.common.scene.SceneObject;
+import lombok.Getter;
 import org.joml.Vector2f;
 
 import static java.lang.Thread.sleep;
@@ -20,6 +21,7 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
     private static final int MIN_TIME_PER_TURN = 100;
     //this keeps track of the last time a move was made so that the minimum time can be enforced
     private long last_time_run = 0;
+    @Getter
     private UIPlayer localPlayer;
 
 
@@ -111,10 +113,10 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
         }
         if(gameState.getPiece(move).getColor() == Piece.Color.RED){
             SceneObject obj = new SceneObject().setTex(TexturePool.getID("red_hex.png")).setSize(new Vector2f(1,2));
-            Renderer.get().render(obj, (float) move.column() / 2 + move.row(), (float) (43 - (move.column() * 1.5)));
+            Renderer.get().render(obj, (float) move.row() / 2 + move.column(), (float) (43 - (move.row() * 1.5)));
         }else{
             SceneObject obj = new SceneObject().setTex(TexturePool.getID("blue_hex.png")).setSize(new Vector2f(1,2));
-            Renderer.get().render(obj, (float) move.column() / 2 + move.row(), (float) (43 - (move.column() * 1.5)));
+            Renderer.get().render(obj, (float) move.row() / 2 + move.column(), (float) (43 - (move.row() * 1.5)));
         }
         last_time_run = System.currentTimeMillis();
     }
