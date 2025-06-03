@@ -27,4 +27,7 @@ public class RandomPlayer implements Player {
         int randomIndex = ThreadLocalRandom.current().nextInt(legalMoves.size());
         return legalMoves.get(randomIndex);
     }
+
+    @Override
+    public void addPiece(Position position) {}
 }

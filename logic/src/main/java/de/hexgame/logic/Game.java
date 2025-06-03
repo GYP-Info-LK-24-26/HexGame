@@ -34,6 +34,8 @@ public class Game extends Thread {
                 );
             }
             gameState.makeMove(move);
+            System.out.println(move + playerToMove.getName());
+            //playerA.addPiece(move.targetHexagon());
             Player tempPlayer = playerToMove;
             playerToMove = otherPlayer;
             otherPlayer = tempPlayer;

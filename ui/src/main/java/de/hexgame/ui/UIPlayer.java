@@ -3,6 +3,7 @@ package de.hexgame.ui;
 import de.hexgame.logic.GameState;
 import de.hexgame.logic.Move;
 import de.hexgame.logic.Player;
+import de.hexgame.logic.Position;
 
 public class UIPlayer implements Player {
     //TODO add name setting in settings menu
@@ -32,4 +33,7 @@ public class UIPlayer implements Player {
         nextMove = null;
         return ret;
     }
+
+    @Override
+    public void addPiece(Position position) {}
 }

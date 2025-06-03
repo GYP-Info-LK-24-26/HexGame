@@ -6,7 +6,8 @@ import lombok.Getter;
 
 public class Algorithm {
 
-    private Piece[][] pieces;
+    //private Piece[][] pieces;
+    private boolean[] piece;
     @Getter
     private final GameState gameState;
     private final int board;
@@ -15,30 +16,42 @@ public class Algorithm {
     public Algorithm() {
         gameState = new GameState();
         board = GameState.BOARD_SIZE;
-        pieces = new Piece[board][board];
-        clear();
+        piece = new boolean[board * board];
+        for (int i = 0; i < (board * board); i++) {
+            piece[i] = false;
+        }
+        //pieces = new Piece[board][board];
+        //clear();
     }
 
-    public void addPossibleNodes() {
+
+    public void addPlacedNodes() {
         Position position;
 
         for (int i = 0; i < board; i++) {
             for (int j = 0; j < board; j++) {
                 position = new Position(i, j);
                 if (gameState.getPiece(position) != null) {
-                    pieces[i][j] = gameState.getPiece(position);
+                    piece[i * board + j] = true;
                 }
             }
         }
     }
 
+
+    public void addPiece(Position position) {
+        piece[position.getIndex()] = true;
+    }
+
+    /*
     public void clear() {
         for (int i = 0; i < board; i++) {
             for (int j = 0; j < board; j++) {
-                pieces[i][j] = null;
+                //pieces[i][j] = null;
             }
         }
     }
+    */
 
     public Position bestPosition(Piece.Color usedColor) {
         Position bestPosition = null;
@@ -48,7 +61,7 @@ public class Algorithm {
 
         for (int i = 0; i < board; i++) {
             for (int j = 0; j < board; j++) {
-                if (pieces[i][j] != null){
+                if (piece[i * board + j]){
                     continue;
                 }
                 Position position = new Position(i, j); //Possible postion
@@ -74,7 +87,7 @@ public class Algorithm {
             return tempRating;
         }
 
-        if (tempPiece.equals(null)) {
+        if (tempPiece == null) {
             tempRating++;
         } else if (tempPiece.getColor().equals(usedColor)) {
             if (tempPiece.isConnectedHigh() || tempPiece.isConnectedLow()) {
@@ -100,7 +113,9 @@ public class Algorithm {
 
         for (Direction direction: Direction.ALL) {
             tempPosition = position.add(direction);
-            rating = rating + calculateRating(tempPosition, usedColor);
+            if (tempPosition.isValid()) {
+                rating = rating + calculateRating(tempPosition, usedColor);
+            }
         }
         return rating;
     }
@@ -131,7 +146,7 @@ public class Algorithm {
 
         for (int i = 0; i < board; i++) {
             for (int j = 0; j < board; j++) {
-                if (pieces[i][j] != null) {
+                if (piece[i * board + j]) {
                     continue;
                 }
 
@@ -141,18 +156,22 @@ public class Algorithm {
 
                 for (Direction direction: Direction.ALL){
                     tempDirectionPostiton = tempPositon.add(direction);
-                    tempRating = tempRating + calculateRating(tempDirectionPostiton, usedColor);
-                    if (gameState.getPiece(tempDirectionPostiton).isConnectedLow()) {
-                        dummyPiece.setConnectedLow(true);
-                    }
-                    if (gameState.getPiece(tempDirectionPostiton).isConnectedHigh()) {
-                        dummyPiece.setConnectedHigh(true);
+                    if (tempDirectionPostiton.isValid()) {
+                        tempRating = tempRating + calculateRating(tempDirectionPostiton, usedColor);
+                        if (gameState.getPiece(tempDirectionPostiton) != null) {
+                            if (gameState.getPiece(tempDirectionPostiton).isConnectedLow()) {
+                                dummyPiece.setConnectedLow(true);
+                            }
+                            if (gameState.getPiece(tempDirectionPostiton).isConnectedHigh()) {
+                                dummyPiece.setConnectedHigh(true);
+                            }
+                        }
                     }
                 }
 
                 for (int k = 0; k < board; k++) {
                     for (int l = 0; l < board; l++) {
-                        if (pieces[k][l] != null) {
+                        if (piece[k * board + l]) {
                             counterFreePieces--;
                             continue;
                         }
@@ -161,18 +180,22 @@ public class Algorithm {
 
                         for (Direction otherColorDirection: Direction.ALL){
                             tempOtherColorDirectionPostion = tempOtherColorPosition.add(otherColorDirection);
-                            tempOtherColorRating = tempOtherColorRating + calculateRating(tempOtherColorDirectionPostion, otherColor);
-                            if (gameState.getPiece(tempOtherColorDirectionPostion).isConnectedLow()) {
-                                dummyOtherColorPiece.setConnectedLow(true);
-                            }
-                            if (gameState.getPiece(tempOtherColorDirectionPostion).isConnectedHigh()) {
-                                dummyOtherColorPiece.setConnectedHigh(true);
+                            if (tempOtherColorDirectionPostion.isValid()) {
+                                tempOtherColorRating = tempOtherColorRating + calculateRating(tempOtherColorDirectionPostion, otherColor);
+                                if (gameState.getPiece(tempOtherColorDirectionPostion) != null) {
+                                    if (gameState.getPiece(tempOtherColorDirectionPostion).isConnectedLow()) {
+                                        dummyOtherColorPiece.setConnectedLow(true);
+                                    }
+                                    if (gameState.getPiece(tempOtherColorDirectionPostion).isConnectedHigh()) {
+                                        dummyOtherColorPiece.setConnectedHigh(true);
+                                    }
+                                }
                             }
                         }
 
                         for (int m = 0; m < board; m++) {
                             for (int n = 0; n < board; n++) {
-                                if (pieces[m][n] != null) {
+                                if (piece[m * board + n]) {
                                     counterFreePiecesSameColor--;
                                     continue;
                                 }

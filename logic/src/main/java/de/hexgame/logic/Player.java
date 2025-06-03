@@ -13,4 +13,6 @@ public interface Player {
      * @return the move the player choose to make
      */
     Move think(GameState gameState);
+
+    void addPiece(Position position);
 }
