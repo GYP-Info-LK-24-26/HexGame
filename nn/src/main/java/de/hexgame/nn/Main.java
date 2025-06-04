@@ -48,7 +48,7 @@ public class Main {
                         .activation(Activation.RELU)
                         .build(), "conv2")
                 .addLayer("policyOut", new OutputLayer.Builder(LossFunctions.LossFunction.MCXENT)
-                        .nOut(BOARD_SIZE * BOARD_SIZE + 1)
+                        .nOut(BOARD_SIZE * BOARD_SIZE)
                         .activation(Activation.SOFTMAX)
                         .build(), "policyConv")
 
@@ -68,7 +68,7 @@ public class Main {
         graph.init();
 
         INDArray input = Nd4j.create(1, 4, BOARD_SIZE, BOARD_SIZE);
-        INDArray policyTarget = Nd4j.create(1, BOARD_SIZE * BOARD_SIZE);
+        INDArray policyTarget = Nd4j.create(1, BOARD_SIZE, BOARD_SIZE);
         INDArray valueTarget = Nd4j.create(1, 1);
 
         MultiDataSet dataSet = new MultiDataSet(new INDArray[]{input}, new INDArray[]{policyTarget, valueTarget});

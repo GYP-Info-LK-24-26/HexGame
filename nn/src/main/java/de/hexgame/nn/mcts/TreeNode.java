@@ -3,10 +3,13 @@ package de.hexgame.nn.mcts;
 import de.hexgame.logic.GameState;
 import de.hexgame.logic.Move;
 import de.hexgame.nn.Model;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static de.hexgame.logic.GameState.BOARD_SIZE;
 
 @RequiredArgsConstructor
 public class TreeNode {
@@ -14,6 +17,7 @@ public class TreeNode {
 
     private final List<TreeNode> children = new ArrayList<>();
 
+    private final Move move;
     private final GameState gameState;
     private Model.Output modelOutput;
     private final float prior;
@@ -56,8 +60,8 @@ public class TreeNode {
             for (Move legalMove : gameState.getLegalMoves()) {
                 GameState newGameState = gameState.clone();
                 newGameState.makeMove(legalMove);
-                float newPrior = modelOutput.policy()[legalMove.targetHexagon().getIndex()];
-                children.add(new TreeNode(newGameState, newPrior));
+                float newPrior = modelOutput.policy()[legalMove.getIndex()];
+                children.add(new TreeNode(legalMove, newGameState, newPrior));
             }
             visits++;
             valueSum += modelOutput.value();
@@ -83,5 +87,13 @@ public class TreeNode {
         valueSum += eval;
 
         return eval;
+    }
+
+    public Model.Output getCombinedOutput() {
+        float[] policy = new float[BOARD_SIZE * BOARD_SIZE];
+        for (TreeNode child : children) {
+            policy[child.move.getIndex()] = child.visits;
+        }
+        return new Model.Output(policy, getMeanValue());
     }
 }

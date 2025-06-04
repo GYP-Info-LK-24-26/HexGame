@@ -10,13 +10,13 @@ public class GameTree {
     private TreeNode root;
 
     public GameTree(GameState gameState) {
-        root = new TreeNode(gameState, 0.0f);
+        root = new TreeNode(null, gameState, 0.0f);
     }
 
     public void jumpTo(GameState gameState) {
         root = root.jumpTo(gameState);
         if (root == null) {
-            root = new TreeNode(gameState, 0.0f);
+            root = new TreeNode(null, gameState, 0.0f);
         }
     }
 
@@ -25,7 +25,6 @@ public class GameTree {
     }
 
     public Model.Output getCombinedOutput() {
-        float[] policy = new float[BOARD_SIZE * BOARD_SIZE];
-        return new Model.Output(policy, root.getMeanValue());
+        return root.getCombinedOutput();
     }
 }

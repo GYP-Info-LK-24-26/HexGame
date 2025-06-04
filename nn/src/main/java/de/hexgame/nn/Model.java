@@ -99,6 +99,14 @@ public class Model {
         // End ChatGPT
     }
 
-    public record Output(float[] policy, float value) {
+    public record Output(float[] policy, float value) implements Cloneable {
+        @Override
+        public Output clone() {
+            try {
+                return (Output) super.clone();
+            } catch (CloneNotSupportedException e) {
+                throw new AssertionError();
+            }
+        }
     }
 }
