@@ -51,7 +51,7 @@ public class PlayGUI extends GUI {
                     if(first instanceof UIPlayer && second instanceof UIPlayer)return;
                     if(first instanceof UIPlayer)UIGameBoard.setCurrentUIPlayer((UIPlayer) first);
                     if(second instanceof UIPlayer)UIGameBoard.setCurrentUIPlayer((UIPlayer) second);
-
+                    Renderer.get().clear();
                     UIGameBoard.get().startRendering();
                     Game game = new Game(first, second);
                     game.getGameState().addPlayerMoveListener(UIGameBoard.get());
