@@ -10,7 +10,7 @@ public record Move(Position targetHexagon,double winChance) {
     @Override
     public String toString() {
         if (targetHexagon.isValid()) {
-            return String.format("{\ntarget=%s\nwin_chance%s\n}",targetHexagon,winChance);
+            return targetHexagon.toString();
         } else {
             return "(X)";
         }
