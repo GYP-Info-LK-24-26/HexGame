@@ -24,6 +24,10 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
     @Getter
     private UIPlayer localPlayer;
     private Vector2f uniformSize;
+    @Getter
+    private float leftOffset;
+    @Getter
+    private float scale;
 
 
     private UIGameBoard() {
@@ -37,43 +41,49 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
         HIDInput.activateListener(this);
         TexturePool.getID("red_hex.png");
         TexturePool.getID("blue_hex.png");
-        double xScale = 80 / (double) GameState.BOARD_SIZE;
-        float yScale = 1.5f;//45 / (float) GameState.BOARD_SIZE;
+        float xScale = 80 / ((float) GameState.BOARD_SIZE + 1.5f) / 1.5f;
+        float yScale = 45 / ((float) GameState.BOARD_SIZE + 1.5f) / 1.5f;
+        scale = yScale;
+
+        float right = ((float) (GameState.BOARD_SIZE - 1) / 2 + (GameState.BOARD_SIZE)) * yScale;
+        float size = right;
+        float remainder = (80 - size) / 2;
+        leftOffset = remainder;
 
         uniformSize = new Vector2f((float) (1 * yScale), (float) (2 * yScale));
 
         SceneObject objHigh = new SceneObject().setTex(TexturePool.getID("left_top_hex.png")).setSize(uniformSize);
-        Renderer.get().render(objHigh,0,44 - 1 * yScale);
+        Renderer.get().render(objHigh,remainder,GameState.BOARD_SIZE * yScale * 1.5f);
 
 
         SceneObject objLow = new SceneObject().setTex(TexturePool.getID("left_top_hex.png")).setSize(uniformSize).setRotation(2);
-        Renderer.get().render(objLow, ((float) (GameState.BOARD_SIZE - 1) / 2 + (GameState.BOARD_SIZE - 1)) * yScale, ((float) (43 - ((GameState.BOARD_SIZE - 1) * 1.5 * yScale))));
+        Renderer.get().render(objLow, ((float) (GameState.BOARD_SIZE - 1) / 2 + (GameState.BOARD_SIZE - 1)) * yScale + remainder, 1.5f * yScale);
 
         SceneObject objLL = new SceneObject().setTex(TexturePool.getID("left_bot_hex.png")).setSize(uniformSize);
-        Renderer.get().render(objLL, ((float) (GameState.BOARD_SIZE - 1) / 2) * yScale, ((float) (43 - ((GameState.BOARD_SIZE - 1) * 1.5 * yScale))));
+        Renderer.get().render(objLL, ((float) (GameState.BOARD_SIZE - 1) / 2) * yScale + remainder, 1.5f * yScale);
 
         SceneObject objRR = new SceneObject().setTex(TexturePool.getID("left_bot_hex.png")).setSize(uniformSize).setRotation(2);
-        Renderer.get().render(objRR,(GameState.BOARD_SIZE - 1) * yScale,44 - 1 * yScale);
+        Renderer.get().render(objRR,(GameState.BOARD_SIZE - 1) * yScale + remainder,GameState.BOARD_SIZE * yScale * 1.5f);
 
         for (int i = 1; i < GameState.BOARD_SIZE - 1; i++) {
             SceneObject objL = new SceneObject().setTex(TexturePool.getID("left_hex.png")).setSize(uniformSize);
-            Renderer.get().render(objL, ((float) i / 2) * yScale, ((float) (43 - (i * 1.5 * yScale))));
+            Renderer.get().render(objL, ((float) (GameState.BOARD_SIZE - i - 1) / 2) * yScale + remainder,((i + 1) * 1.5f * yScale));
 
             SceneObject objR = new SceneObject().setTex(TexturePool.getID("left_hex.png")).setSize(uniformSize).setRotation(2);
-            Renderer.get().render(objR, ((float) i / 2 + (GameState.BOARD_SIZE - 1)) * yScale, ((float) (43 - (i * 1.5 * yScale))));
+            Renderer.get().render(objR, ((float) (GameState.BOARD_SIZE - i - 1) / 2 + (GameState.BOARD_SIZE - 1)) * yScale + remainder, ((float) ((i + 1) * 1.5 * yScale)));
 
             SceneObject objH = new SceneObject().setTex(TexturePool.getID("top_hex.png")).setSize(uniformSize);
-            Renderer.get().render(objH,i * yScale,43 * yScale);
+            Renderer.get().render(objH,i * yScale + remainder,(GameState.BOARD_SIZE) * yScale * 1.5f);
 
             SceneObject objD = new SceneObject().setTex(TexturePool.getID("top_hex.png")).setSize(uniformSize).setRotation(2);
-            Renderer.get().render(objD, ((float) (GameState.BOARD_SIZE - 1) / 2 + i) * yScale, ((float) (43 - ((GameState.BOARD_SIZE - 1) * 1.5 * yScale))) );
+            Renderer.get().render(objD, ((float) (GameState.BOARD_SIZE - 1) / 2 + i) * yScale + remainder, 1.5f * yScale);
         }
 
 
         for (int i = 1; i < GameState.BOARD_SIZE - 1; i++) {
             for (int j = 1; j < GameState.BOARD_SIZE - 1; j++) {
                 SceneObject obj = new SceneObject().setTex(TexturePool.getID("hex.png")).setSize(uniformSize);
-                Renderer.get().render(obj, ((float) j / 2 + i) * yScale, (float) (43 - (j * 1.5 * yScale)));
+                Renderer.get().render(obj, ((float) (GameState.BOARD_SIZE - j - 1) / 2 + i) * yScale + remainder, (float) ((j + 1) * 1.5 * yScale));
             }
         }
 
@@ -116,13 +126,14 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
                 throw new RuntimeException(e);
             }
         }
-        if(gameState.getPiece(move).getColor() == Piece.Color.RED){
-            SceneObject obj = new SceneObject().setTex(TexturePool.getID("red_hex.png")).setSize(uniformSize);
-            Renderer.get().render(obj, (float) move.row() / 2 + move.column(), (float) (43 - (move.row() * 1.5)));
-        }else{
-            SceneObject obj = new SceneObject().setTex(TexturePool.getID("blue_hex.png")).setSize(uniformSize);
-            Renderer.get().render(obj, (float) move.row() / 2 + move.column(), (float) (43 - (move.row() * 1.5)));
-        }
+        SceneObject obj = new SceneObject().setTex(TexturePool.getID(gameState.getPiece(move).getColor() == Piece.Color.RED? "red_hex.png":"blue_hex.png")).setSize(uniformSize);
+        //if(gameState.getPiece(move).getColor() == Piece.Color.RED){
+
+            //Renderer.get().render(obj, (float) move.row() / 2 + move.column(), (float) (43 - (move.row() * 1.5)));
+        //}else{
+            //SceneObject obj = new SceneObject().setTex(TexturePool.getID("blue_hex.png")).setSize(uniformSize);
+            Renderer.get().render(obj, ((float) (move.row()) / 2 + move.column()) * scale + leftOffset, (float) ((GameState.BOARD_SIZE - move.row()) * 1.5 * scale));
+        //}
         last_time_run = System.currentTimeMillis();
     }
 
