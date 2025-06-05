@@ -28,7 +28,11 @@ public class PlayGUI extends GUI {
             List<String> playerNames = reader.lines().toList();
             playerList = new ArrayList<>();
             for (String playerName : playerNames) {
-                 playerList.add((Class<? extends Player>) Class.forName(playerName));
+                try {
+                    playerList.add((Class<? extends Player>) Class.forName(playerName));
+                }catch (ClassCastException e){
+                    throw new RuntimeException("Player Class has to inherit Player but " + playerName + " does not",e);
+                }
 
             }
         } catch (IOException | ClassNotFoundException e) {

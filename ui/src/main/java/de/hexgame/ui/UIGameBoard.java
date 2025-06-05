@@ -14,6 +14,7 @@ import static java.lang.Thread.sleep;
 /**
  * this class is instanced so only one instance may exist during runtime which is available via {@link UIGameBoard#get()}
  */
+//the size of the screen is 80 * 45,the bottom row is kept clear to avoid collision with on-screen objects and to make it look better
 public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
     private static UIGameBoard instance;
     private GameState gameState;
