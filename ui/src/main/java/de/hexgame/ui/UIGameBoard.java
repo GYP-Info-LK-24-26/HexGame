@@ -12,7 +12,7 @@ import org.joml.Vector2f;
 import static java.lang.Thread.sleep;
 
 /**
- * this class is instanced eg only one instance may exist during one runtime available via {@link UIGameBoard#get()}
+ * this class is instanced so only one instance may exist during runtime which is available via {@link UIGameBoard#get()}
  */
 public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
     private static UIGameBoard instance;
@@ -23,6 +23,7 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
     private long last_time_run = 0;
     @Getter
     private UIPlayer localPlayer;
+    private Vector2f uniformSize;
 
 
     private UIGameBoard() {
@@ -36,39 +37,43 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
         HIDInput.activateListener(this);
         TexturePool.getID("red_hex.png");
         TexturePool.getID("blue_hex.png");
+        double xScale = 80 / (double) GameState.BOARD_SIZE;
+        float yScale = 1.5f;//45 / (float) GameState.BOARD_SIZE;
 
-        SceneObject objHigh = new SceneObject().setTex(TexturePool.getID("left_top_hex.png")).setSize(new Vector2f(1,2));
-        Renderer.get().render(objHigh,0,43);
+        uniformSize = new Vector2f((float) (1 * yScale), (float) (2 * yScale));
+
+        SceneObject objHigh = new SceneObject().setTex(TexturePool.getID("left_top_hex.png")).setSize(uniformSize);
+        Renderer.get().render(objHigh,0,44 - 1 * yScale);
 
 
-        SceneObject objLow = new SceneObject().setTex(TexturePool.getID("left_top_hex.png")).setSize(new Vector2f(1,2)).setRotation(2);
-        Renderer.get().render(objLow, (float) (GameState.BOARD_SIZE - 1) / 2 + (GameState.BOARD_SIZE - 1), (float) (43 - ((GameState.BOARD_SIZE - 1) * 1.5)));
+        SceneObject objLow = new SceneObject().setTex(TexturePool.getID("left_top_hex.png")).setSize(uniformSize).setRotation(2);
+        Renderer.get().render(objLow, ((float) (GameState.BOARD_SIZE - 1) / 2 + (GameState.BOARD_SIZE - 1)) * yScale, ((float) (43 - ((GameState.BOARD_SIZE - 1) * 1.5 * yScale))));
 
-        SceneObject objLL = new SceneObject().setTex(TexturePool.getID("left_bot_hex.png")).setSize(new Vector2f(1,2));
-        Renderer.get().render(objLL, (float) (GameState.BOARD_SIZE - 1) / 2, (float) (43 - ((GameState.BOARD_SIZE - 1) * 1.5)));
+        SceneObject objLL = new SceneObject().setTex(TexturePool.getID("left_bot_hex.png")).setSize(uniformSize);
+        Renderer.get().render(objLL, ((float) (GameState.BOARD_SIZE - 1) / 2) * yScale, ((float) (43 - ((GameState.BOARD_SIZE - 1) * 1.5 * yScale))));
 
-        SceneObject objRR = new SceneObject().setTex(TexturePool.getID("left_bot_hex.png")).setSize(new Vector2f(1,2)).setRotation(2);
-        Renderer.get().render(objRR,GameState.BOARD_SIZE - 1,43);
+        SceneObject objRR = new SceneObject().setTex(TexturePool.getID("left_bot_hex.png")).setSize(uniformSize).setRotation(2);
+        Renderer.get().render(objRR,(GameState.BOARD_SIZE - 1) * yScale,44 - 1 * yScale);
 
         for (int i = 1; i < GameState.BOARD_SIZE - 1; i++) {
-            SceneObject objL = new SceneObject().setTex(TexturePool.getID("left_hex.png")).setSize(new Vector2f(1,2));
-            Renderer.get().render(objL, (float) i / 2, (float) (43 - (i * 1.5)));
+            SceneObject objL = new SceneObject().setTex(TexturePool.getID("left_hex.png")).setSize(uniformSize);
+            Renderer.get().render(objL, ((float) i / 2) * yScale, ((float) (43 - (i * 1.5 * yScale))));
 
-            SceneObject objR = new SceneObject().setTex(TexturePool.getID("left_hex.png")).setSize(new Vector2f(1,2)).setRotation(2);
-            Renderer.get().render(objR, (float) i / 2 + (GameState.BOARD_SIZE - 1), (float) (43 - (i * 1.5)));
+            SceneObject objR = new SceneObject().setTex(TexturePool.getID("left_hex.png")).setSize(uniformSize).setRotation(2);
+            Renderer.get().render(objR, ((float) i / 2 + (GameState.BOARD_SIZE - 1)) * yScale, ((float) (43 - (i * 1.5 * yScale))));
 
-            SceneObject objH = new SceneObject().setTex(TexturePool.getID("top_hex.png")).setSize(new Vector2f(1,2));
-            Renderer.get().render(objH,i,43);
+            SceneObject objH = new SceneObject().setTex(TexturePool.getID("top_hex.png")).setSize(uniformSize);
+            Renderer.get().render(objH,i * yScale,43 * yScale);
 
-            SceneObject objD = new SceneObject().setTex(TexturePool.getID("top_hex.png")).setSize(new Vector2f(1,2)).setRotation(2);
-            Renderer.get().render(objD, (float) (GameState.BOARD_SIZE - 1) / 2 + i, (float) (43 - ((GameState.BOARD_SIZE - 1) * 1.5)));
+            SceneObject objD = new SceneObject().setTex(TexturePool.getID("top_hex.png")).setSize(uniformSize).setRotation(2);
+            Renderer.get().render(objD, ((float) (GameState.BOARD_SIZE - 1) / 2 + i) * yScale, ((float) (43 - ((GameState.BOARD_SIZE - 1) * 1.5 * yScale))) );
         }
 
 
         for (int i = 1; i < GameState.BOARD_SIZE - 1; i++) {
             for (int j = 1; j < GameState.BOARD_SIZE - 1; j++) {
-                SceneObject obj = new SceneObject().setTex(TexturePool.getID("hex.png")).setSize(new Vector2f(1,2));
-                Renderer.get().render(obj, (float) j / 2 + i, (float) (43 - (j * 1.5)));
+                SceneObject obj = new SceneObject().setTex(TexturePool.getID("hex.png")).setSize(uniformSize);
+                Renderer.get().render(obj, ((float) j / 2 + i) * yScale, (float) (43 - (j * 1.5 * yScale)));
             }
         }
 
@@ -112,10 +117,10 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
             }
         }
         if(gameState.getPiece(move).getColor() == Piece.Color.RED){
-            SceneObject obj = new SceneObject().setTex(TexturePool.getID("red_hex.png")).setSize(new Vector2f(1,2));
+            SceneObject obj = new SceneObject().setTex(TexturePool.getID("red_hex.png")).setSize(uniformSize);
             Renderer.get().render(obj, (float) move.row() / 2 + move.column(), (float) (43 - (move.row() * 1.5)));
         }else{
-            SceneObject obj = new SceneObject().setTex(TexturePool.getID("blue_hex.png")).setSize(new Vector2f(1,2));
+            SceneObject obj = new SceneObject().setTex(TexturePool.getID("blue_hex.png")).setSize(uniformSize);
             Renderer.get().render(obj, (float) move.row() / 2 + move.column(), (float) (43 - (move.row() * 1.5)));
         }
         last_time_run = System.currentTimeMillis();
