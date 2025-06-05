@@ -15,6 +15,7 @@ public class Algorithm {
     public Algorithm() {
         gameState = new GameState();
         board = GameState.BOARD_SIZE;
+        pieces = new Piece[board][board];
         clear();
     }
 

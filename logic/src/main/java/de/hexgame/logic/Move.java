@@ -1,13 +1,18 @@
 package de.hexgame.logic;
 
 // The target hexagon may be invalid for switching sides.
-public record Move(Position targetHexagon) {
-    public int getIndex() {
-        return targetHexagon().getIndex();
+public record Move(Position targetHexagon,double winChance) {
+
+    public Move(Position targetHexagon){
+        this(targetHexagon, Double.NaN);
     }
 
     @Override
     public String toString() {
-        return targetHexagon.toString();
+        if (targetHexagon.isValid()) {
+            return targetHexagon.toString();
+        } else {
+            return "(X)";
+        }
     }
 }
