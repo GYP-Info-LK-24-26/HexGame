@@ -1,0 +1,2 @@
+de.hexgame.ui.UIPlayer
+de.hexgame.logic.RandomPlayer

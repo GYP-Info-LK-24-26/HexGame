@@ -3,6 +3,9 @@ package de.hexgame.logic;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  *
  * This class may be run as a thread to play a game<br> the players have to be provided
@@ -14,11 +17,17 @@ public class Game extends Thread {
     private final GameState gameState;
     private final Player playerA;
     private final Player playerB;
+    private List<PlayerWinListener> listeners;
 
     public Game(Player playerA, Player playerB) {
         this.gameState = new GameState();
         this.playerA = playerA;
         this.playerB = playerB;
+        listeners = new ArrayList<>();
+    }
+
+    public void addPlayerWinListener(PlayerWinListener listener) {
+        listeners.add(listener);
     }
 
     @Override
@@ -39,6 +48,10 @@ public class Game extends Thread {
             otherPlayer = tempPlayer;
         }
 
-        System.out.printf("%s won!\n", otherPlayer.getName());
+        if(listeners.isEmpty()) System.out.printf("%s won!\n", otherPlayer.getName());
+        else{
+            final Player winner = otherPlayer;
+            listeners.forEach(listeners -> listeners.onPlayerWin(winner));
+        }
     }
 }

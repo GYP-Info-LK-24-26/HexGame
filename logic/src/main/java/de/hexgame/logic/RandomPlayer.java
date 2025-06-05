@@ -23,8 +23,6 @@ public class RandomPlayer implements Player {
 
     @Override
     public Move think(GameState gameState) {
-        List<Move> legalMoves = gameState.getLegalMoves();
-        int randomIndex = ThreadLocalRandom.current().nextInt(legalMoves.size());
-        return legalMoves.get(randomIndex);
+        return Util.generateRandomMove(gameState);
     }
 }
