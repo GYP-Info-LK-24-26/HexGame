@@ -4,15 +4,14 @@
 
 plugins {
     id("buildlogic.java-conventions")
+    id("application")
 }
-/*
+
 dependencies {
-    implementation("org.apache.commons:commons-text")
-    implementation(project(":utilities"))
+    implementation(project(":logic"))
 }
 
 application {
     // Define the main class for the application.
     mainClass = "org.example.app.App"
 }
-*/
