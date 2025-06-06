@@ -11,13 +11,20 @@ import java.util.List;
  * This class may be run as a thread to play a game<br> the players have to be provided
  */
 @AllArgsConstructor
-public class Game extends Thread {
+public class Game implements Runnable {
     public static final int VERSION = 7;
     @Getter
     private final GameState gameState;
     private final Player playerA;
     private final Player playerB;
     private List<PlayerWinListener> listeners;
+    private List<WinChanceChangeListener> winChanceChangeListeners;
+    private Thread runningThread;
+
+    public Thread asThread(){
+        if (runningThread == null) runningThread = new Thread(this);
+        return runningThread;
+    }
 
     public Game(GameState gameState, Player playerA, Player playerB) {
         this.gameState = gameState;
@@ -36,10 +43,16 @@ public class Game extends Thread {
         listeners.add(listener);
     }
 
+    public void addWinChanceChangeListener(WinChanceChangeListener listener) {
+        winChanceChangeListeners.add(listener);
+    }
+
     @Override
     public void run() {
         Player playerToMove = playerA;
         Player otherPlayer = playerB;
+        double playerToMoveChance = 0.0;
+        double otherPlayerChance = 0.0;
 
         while (!gameState.isFinished()) {
             Move move = playerToMove.think(gameState);
@@ -52,6 +65,12 @@ public class Game extends Thread {
             Player tempPlayer = playerToMove;
             playerToMove = otherPlayer;
             otherPlayer = tempPlayer;
+
+            final Player player = playerToMove;
+            if(playerToMoveChance != move.winChance())winChanceChangeListeners.forEach(listeners -> listeners.onWinChangeChange(player,move.winChance()));
+
+            playerToMoveChance = otherPlayerChance;
+            otherPlayerChance = move.winChance();
         }
 
         if(listeners.isEmpty()) System.out.printf("%s won!\n", otherPlayer.getName());

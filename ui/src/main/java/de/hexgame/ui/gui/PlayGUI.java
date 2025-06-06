@@ -61,7 +61,7 @@ public class PlayGUI extends GUI {
                     game.getGameState().addPlayerMoveListener(UIGameBoard.get());
                     game.addPlayerWinListener(WinGUI::new);
                     UIGameBoard.setGameState(game.getGameState());
-                    game.start();
+                    game.asThread().start();
                 } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                          NoSuchMethodException e) {
                     throw new RuntimeException(e);
