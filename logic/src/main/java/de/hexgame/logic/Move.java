@@ -7,6 +7,10 @@ public record Move(Position targetHexagon,double winChance) {
         this(targetHexagon, Double.NaN);
     }
 
+    public int getIndex() {
+        return targetHexagon().getIndex();
+    }
+
     @Override
     public String toString() {
         if (targetHexagon.isValid()) {

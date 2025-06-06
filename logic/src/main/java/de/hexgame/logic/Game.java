@@ -19,6 +19,12 @@ public class Game extends Thread {
     private final Player playerB;
     private List<PlayerWinListener> listeners;
 
+    public Game(Player playerA,Player playerB,GameState gameState) {
+        this.gameState = gameState;
+        this.playerA = playerA;
+        this.playerB = playerB;
+    }
+
     public Game(Player playerA, Player playerB) {
         this.gameState = new GameState();
         this.playerA = playerA;
