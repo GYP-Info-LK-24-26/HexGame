@@ -12,7 +12,7 @@ import java.util.List;
  */
 @AllArgsConstructor
 public class Game implements Runnable {
-    public static final int VERSION = 7;
+    public static final int VERSION = 10;
     @Getter
     private final GameState gameState;
     private final Player playerA;

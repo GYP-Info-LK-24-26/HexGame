@@ -86,11 +86,7 @@ public class GameState implements Cloneable {
 
     public boolean isLegalMove(Move move) {
         Position targetPosition = move.targetHexagon();
-        if (targetPosition.isValid()) {
-            return getPiece(targetPosition) == null;
-        } else {
-            return halfMoveCounter == 1;
-        }
+        return getPiece(targetPosition) == null || targetPosition.equals(lastChangedPosition);
     }
 
     //this makes a move,it also accommodates the change of color by a player by not switching the color that is currently at play
