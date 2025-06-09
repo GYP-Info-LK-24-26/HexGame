@@ -30,13 +30,18 @@ public class Game implements Runnable {
         this.gameState = gameState;
         this.playerA = playerA;
         this.playerB = playerB;
+
+        listeners = new ArrayList<>();
+        winChanceChangeListeners = new ArrayList<>();
     }
 
     public Game(Player playerA, Player playerB) {
         this.gameState = new GameState();
         this.playerA = playerA;
         this.playerB = playerB;
+
         listeners = new ArrayList<>();
+        winChanceChangeListeners = new ArrayList<>();
     }
 
     public void addPlayerWinListener(PlayerWinListener listener) {
