@@ -24,6 +24,7 @@ public class GameState implements Cloneable {
     @Getter
     /// counts the number of individual moves made
     private int halfMoveCounter;
+    @Getter
     private Position lastChangedPosition;
     //keeps track of every listener hook
     private List<PlayerMoveListener> playerMoveListeners;

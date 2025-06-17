@@ -13,18 +13,14 @@ public class Run {
 
     public Position start(Piece.Color acolor, int movesToCalculate) {
         Position temp;
-        algorithm.addPlacedNodes();
+        algorithm.addPossibleNodes();
         if (movesToCalculate == 1) {
             temp = algorithm.bestPosition(acolor);
         }
         else {
             temp = algorithm.bestPositionIn2(acolor);
         }
-        //algorithm.clear();
+        algorithm.clear();
         return temp;
-    }
-
-    public void addPiece(Position position) {
-        algorithm.addPiece(position);
     }
 }
