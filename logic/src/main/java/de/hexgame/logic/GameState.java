@@ -75,7 +75,11 @@ public class GameState implements Cloneable {
         halfMoveCounter = 0;
     }
 
-    protected void setPiece(Position position, Piece piece) {
+    public void resetOnePiece(int position) {
+        pieces[position] = null;
+    }
+
+    public void setPiece(Position position, Piece piece) {
         Piece previousPiece = getPiece(position);
         if (previousPiece != null) {
             throw new IllegalArgumentException(String.format("Piece at %s already exists", position));

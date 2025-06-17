@@ -2,79 +2,48 @@ package de.hexgame.algorithm;
 
 import de.hexgame.logic.*;
 import de.hexgame.logic.GameState;
-import lombok.Getter;
+
+import java.util.List;
 
 public class Algorithm {
 
-    private Piece[][] pieces;
-    @Getter
-    private final GameState gameState;
     private final int board;
 
 
     public Algorithm() {
-        gameState = new GameState();
         board = GameState.BOARD_SIZE;
-        pieces = new Piece[board][board];
-        clear();
     }
 
-    public void addPossibleNodes() {
-        Position position;
-
-        for (int i = 0; i < board; i++) {
-            for (int j = 0; j < board; j++) {
-                position = new Position(i, j);
-                if (gameState.getPiece(position) != null) {
-                    pieces[i][j] = gameState.getPiece(position);
-                }
-            }
-        }
-    }
-
-    public void clear() {
-        for (int i = 0; i < board; i++) {
-            for (int j = 0; j < board; j++) {
-                pieces[i][j] = null;
-            }
-        }
-    }
-
-    public Position bestPosition(Piece.Color usedColor) {
+    public Position bestPosition(GameState gameState) {
         Position bestPosition = null;
         double bestRating = Double.NEGATIVE_INFINITY;
-        double calcRating = 0;
+        double calcRating;
+        List<Move> legalMoves = gameState.getLegalMoves();
 
 
-        for (int i = 0; i < board; i++) {
-            for (int j = 0; j < board; j++) {
-                if (pieces[i][j] != null){
-                    continue;
-                }
-                Position position = new Position(i, j); //Possible postion
+        for (Move move: legalMoves) {
+            Position position = new Position(move.targetHexagon().getIndex());
+            calcRating = calculatePieceRating(position, gameState.getSideToMove(), gameState);
 
-                calcRating = calculatePieceRating(position, usedColor);
-
-                //Checking if possible position is better than the best position
-                if (calcRating > bestRating) {
-                    bestRating = calcRating;
-                    bestPosition = position;
-                }
-                calcRating = 0;
+            //Checking if possible position is better than the best position
+            if (calcRating > bestRating) {
+                bestRating = calcRating;
+                bestPosition = position;
             }
         }
         return bestPosition;
     }
 
-    public double calculateRating(Position position, Piece.Color usedColor) {
+    public double calculateRating(Position position, Piece.Color usedColor, GameState gameState) {
         double tempRating = 0;
-        Piece tempPiece = gameState.getPiece(position);
 
         if (!position.isValid()) {
             return tempRating;
         }
 
-        if (tempPiece.equals(null)) {
+        Piece tempPiece = gameState.getPiece(position);
+
+        if (tempPiece == null) {
             tempRating++;
         } else if (tempPiece.getColor().equals(usedColor)) {
             if (tempPiece.isConnectedHigh() || tempPiece.isConnectedLow()) {
@@ -94,23 +63,23 @@ public class Algorithm {
         return tempRating;
     }
 
-    public double calculatePieceRating(Position position, Piece.Color usedColor) {
+    public double calculatePieceRating(Position position, Piece.Color usedColor, GameState gameState) {
         double rating = 0;
         Position tempPosition;
 
         for (Direction direction: Direction.ALL) {
             tempPosition = position.add(direction);
-            rating = rating + calculateRating(tempPosition, usedColor);
+            rating = rating + calculateRating(tempPosition, usedColor, gameState);
         }
         return rating;
     }
 
-    public Position bestPositionIn2(Piece.Color usedColor) {
+    public Position bestPositionIn2(GameState gameState) {
         Position bestPostion = null;
-        Position tempPositon;
+        Position tempPosition;
         Position tempOtherColorPosition;
-        Position tempDirectionPostiton;
-        Position tempOtherColorDirectionPostion;
+        Position tempDirectionPosition;
+        Position tempOtherColorDirectionPosition;
         Position tempSameColorPosition;
         Piece dummyPiece;
         Piece dummyOtherColorPiece;
@@ -121,77 +90,76 @@ public class Algorithm {
         int counterFreePieces = board * board;
         int counterFreePiecesSameColor = board * board;
         Piece.Color otherColor;
+        Piece.Color usedColor = gameState.getSideToMove();
 
         if (usedColor == Piece.Color.BLUE) {
             otherColor = Piece.Color.RED;
-        }
-        else {
+        } else {
             otherColor = Piece.Color.BLUE;
         }
 
-        for (int i = 0; i < board; i++) {
-            for (int j = 0; j < board; j++) {
-                if (pieces[i][j] != null) {
+        for (Move move : gameState.getLegalMoves()) {
+            tempPosition = new Position(move.targetHexagon().getIndex());
+            dummyPiece = new Piece(usedColor);
+
+
+            for (Direction direction : Direction.ALL) {
+                tempDirectionPosition = tempPosition.add(direction);
+                tempRating = tempRating + calculateRating(tempDirectionPosition, usedColor, gameState);
+                if (!tempDirectionPosition.isValid() || gameState.getPiece(tempDirectionPosition) == null) {
                     continue;
                 }
-
-                tempPositon = new Position(i, j);
-                dummyPiece = gameState.getPiece(new Position(i, j));
-
-
-                for (Direction direction: Direction.ALL){
-                    tempDirectionPostiton = tempPositon.add(direction);
-                    tempRating = tempRating + calculateRating(tempDirectionPostiton, usedColor);
-                    if (gameState.getPiece(tempDirectionPostiton).isConnectedLow()) {
-                        dummyPiece.setConnectedLow(true);
-                    }
-                    if (gameState.getPiece(tempDirectionPostiton).isConnectedHigh()) {
-                        dummyPiece.setConnectedHigh(true);
-                    }
+                if (gameState.getPiece(tempDirectionPosition).isConnectedLow()) {
+                    dummyPiece.setConnectedLow(true);
                 }
-
-                for (int k = 0; k < board; k++) {
-                    for (int l = 0; l < board; l++) {
-                        if (pieces[k][l] != null) {
-                            counterFreePieces--;
-                            continue;
-                        }
-                        tempOtherColorPosition = new Position(k, l);
-                        dummyOtherColorPiece = gameState.getPiece(new Position(k, l));
-
-                        for (Direction otherColorDirection: Direction.ALL){
-                            tempOtherColorDirectionPostion = tempOtherColorPosition.add(otherColorDirection);
-                            tempOtherColorRating = tempOtherColorRating + calculateRating(tempOtherColorDirectionPostion, otherColor);
-                            if (gameState.getPiece(tempOtherColorDirectionPostion).isConnectedLow()) {
-                                dummyOtherColorPiece.setConnectedLow(true);
-                            }
-                            if (gameState.getPiece(tempOtherColorDirectionPostion).isConnectedHigh()) {
-                                dummyOtherColorPiece.setConnectedHigh(true);
-                            }
-                        }
-
-                        for (int m = 0; m < board; m++) {
-                            for (int n = 0; n < board; n++) {
-                                if (pieces[m][n] != null) {
-                                    counterFreePiecesSameColor--;
-                                    continue;
-                                }
-                                tempSameColorPosition = new Position(m, n);
-
-                                tempSameColorRating = calculatePieceRating(tempSameColorPosition, usedColor);
-                            }
-                        }
-                        dummyOtherColorPiece = null;
-                   }
+                if (gameState.getPiece(tempDirectionPosition).isConnectedHigh()) {
+                    dummyPiece.setConnectedHigh(true);
                 }
-                tempRating = tempRating - (tempOtherColorRating / counterFreePieces) + (tempSameColorRating / (counterFreePiecesSameColor * counterFreePieces));
-
-                if (tempRating > bestRating) {
-                    bestRating = tempRating;
-                    bestPostion = tempPositon;
-                }
-                dummyPiece = null;
             }
+
+            for (Move move1 : gameState.getLegalMoves()) {
+
+                if (move1.targetHexagon().getIndex() == tempPosition.getIndex()) {
+                    counterFreePieces--;
+                    continue;
+                }
+                tempOtherColorPosition = new Position(move1.targetHexagon().getIndex());
+                dummyOtherColorPiece = new Piece(otherColor);
+
+                for (Direction otherColorDirection : Direction.ALL) {
+                    tempOtherColorDirectionPosition = tempOtherColorPosition.add(otherColorDirection);
+                    tempOtherColorRating = tempOtherColorRating + calculateRating(tempOtherColorDirectionPosition, otherColor, gameState);
+                    if (!tempOtherColorDirectionPosition.isValid() || gameState.getPiece(tempOtherColorDirectionPosition) == null) {
+                        continue;
+                    }
+                    if (gameState.getPiece(tempOtherColorDirectionPosition).isConnectedLow()) {
+                        dummyOtherColorPiece.setConnectedLow(true);
+                    }
+                    if (gameState.getPiece(tempOtherColorDirectionPosition).isConnectedHigh()) {
+                        dummyOtherColorPiece.setConnectedHigh(true);
+                    }
+                }
+
+                for (Move move2: gameState.getLegalMoves()) {
+                    if (move2.targetHexagon().getIndex() == tempPosition.getIndex() || move2.targetHexagon().getIndex() == tempOtherColorPosition.getIndex()) {
+                        counterFreePiecesSameColor--;
+                        continue;
+                    }
+                    tempSameColorPosition = new Position(move2.targetHexagon().getIndex());
+
+                    tempSameColorRating = calculatePieceRating(tempSameColorPosition, usedColor, gameState);
+                }
+            }
+            tempRating = tempRating - (tempOtherColorRating / counterFreePieces) + (tempSameColorRating / (counterFreePiecesSameColor * counterFreePieces));
+
+            if (tempRating > bestRating) {
+                bestRating = tempRating;
+                bestPostion = tempPosition;
+            }
+        }
+
+        for (Move move : gameState.getLegalMoves()) {
+            gameState.resetOnePiece(move.targetHexagon().getIndex());
         }
         return bestPostion;
     }

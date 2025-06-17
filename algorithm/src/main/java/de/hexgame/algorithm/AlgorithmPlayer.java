@@ -16,12 +16,11 @@ public class AlgorithmPlayer implements Player {
 
     @Override
     public String getName() {
-        return "";
+        return "Algorithm Player";
     }
 
     @Override
     public Move think(GameState gameState) {
-        return new Move(calculate.start(gameState.getSideToMove(), movesToCalculate));
+        return new Move(calculate.start(movesToCalculate, gameState));
     }
-
 }
