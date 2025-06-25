@@ -1,14 +1,25 @@
 package de.hexgame.nn;
 
 import de.hexgame.logic.GameState;
+import de.hexgame.logic.Move;
 import de.hexgame.logic.Piece;
 import de.hexgame.logic.Position;
 import lombok.RequiredArgsConstructor;
-import lombok.val;
+import org.deeplearning4j.nn.conf.ComputationGraphConfiguration;
+import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
+import org.deeplearning4j.nn.conf.inputs.InputType;
+import org.deeplearning4j.nn.conf.layers.ConvolutionLayer;
+import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.graph.ComputationGraph;
+import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.dataset.MultiDataSet;
 import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.indexing.NDArrayIndex;
+import org.nd4j.linalg.learning.config.Adam;
+import org.nd4j.linalg.lossfunctions.LossFunctions;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
 
@@ -20,7 +31,49 @@ public class Model {
     private static final int[] INPUT_SHAPE = new int[]{NUM_INPUT_CHANNELS, BOARD_SIZE, BOARD_SIZE};
 
     private final ComputationGraph computationGraph;
-    private final Map<GameState, Output> cache = new WeakHashMap<>();
+    private final Map<GameState, Output> cache = Collections.synchronizedMap(new WeakHashMap<>());
+
+    public Model() {
+        ComputationGraphConfiguration config = new NeuralNetConfiguration.Builder()
+                .updater(new Adam(1e-3))
+                .graphBuilder()
+                .addInputs("input")
+                .setInputTypes(InputType.convolutional(BOARD_SIZE, BOARD_SIZE, NUM_INPUT_CHANNELS))
+                .addLayer("conv1", new ConvolutionLayer.Builder(3, 3)
+                        .nOut(64)
+                        .padding(1, 1)
+                        .activation(Activation.RELU)
+                        .build(), "input")
+                .addLayer("conv2", new ConvolutionLayer.Builder(3, 3)
+                        .nOut(64)
+                        .padding(1, 1)
+                        .activation(Activation.RELU)
+                        .build(), "conv1")
+
+                .addLayer("policyConv", new ConvolutionLayer.Builder(1, 1)
+                        .nOut(2)
+                        .activation(Activation.RELU)
+                        .build(), "conv2")
+                .addLayer("policyOut", new OutputLayer.Builder(LossFunctions.LossFunction.MCXENT)
+                        .nOut(BOARD_SIZE * BOARD_SIZE)
+                        .activation(Activation.SOFTMAX)
+                        .build(), "policyConv")
+
+                .addLayer("valueConv", new ConvolutionLayer.Builder(1, 1)
+                        .nOut(1)
+                        .activation(Activation.RELU)
+                        .build(), "conv2")
+                .addLayer("valueOut", new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
+                        .nOut(1)
+                        .activation(Activation.TANH)
+                        .build(), "valueConv")
+
+                .setOutputs("policyOut", "valueOut")
+                .build();
+
+        computationGraph = new ComputationGraph(config);
+        computationGraph.init();
+    }
 
     public Output predict(GameState gameState) {
         Output cachedOutput = cache.get(gameState);
@@ -30,9 +83,10 @@ public class Model {
 
         try (INDArray features = Nd4j.create(INPUT_SHAPE)) {
             extractFeatures(gameState, features);
-            val outputMap = computationGraph.feedForward(features, false);
-            val policyOut = outputMap.get("policyOut");
-            Output output = new Output(policyOut.toFloatVector(), outputMap.get("valueOut").getFloat(0));
+            INDArray[] outputs = computationGraph.output(features.reshape(1, NUM_INPUT_CHANNELS, BOARD_SIZE, BOARD_SIZE));
+            INDArray policyOut = outputs[0];
+            INDArray valueOut = outputs[1];
+            Output output = new Output(policyOut.ravel().toFloatVector(), valueOut.getFloat(0));
             cache.put(gameState, output);
             return output;
         }
@@ -41,11 +95,11 @@ public class Model {
     private void extractFeatures(GameState gameState, INDArray featuresOut) {
         // Start ChatGPT
         // ── 0-based channel handles ────────────────────────────────────────────────
-        INDArray ownPieces   = featuresOut.getRow(0);   // shape: [B, B]
-        INDArray enemyPieces = featuresOut.getRow(1);   // shape: [B, B]
-        INDArray swapPossible= featuresOut.getRow(2);   // shape: [B, B]  (all zeros by default)
-        INDArray blueGoal    = featuresOut.getRow(3);   // shape: [B, B]
-        INDArray redGoal     = featuresOut.getRow(4);   // shape: [B, B]
+        INDArray ownPieces   = featuresOut.get(NDArrayIndex.point(0));   // shape: [B, B]
+        INDArray enemyPieces = featuresOut.get(NDArrayIndex.point(1));   // shape: [B, B]
+        INDArray swapPossible= featuresOut.get(NDArrayIndex.point(2));   // shape: [B, B]  (all zeros by default)
+        INDArray blueGoal    = featuresOut.get(NDArrayIndex.point(3));   // shape: [B, B]
+        INDArray redGoal     = featuresOut.get(NDArrayIndex.point(4));   // shape: [B, B]
         final boolean redToMove = (gameState.getSideToMove() == Piece.Color.RED);
 
         // ── 1. Stones ──────────────────────────────────────────────────────────────
@@ -97,6 +151,29 @@ public class Model {
         colMask.close();
         rowMask.close();
         // End ChatGPT
+    }
+
+    public MultiDataSet createDataSet(GameState gameState, Output output) {
+        INDArray features = Nd4j.create(INPUT_SHAPE);
+        extractFeatures(gameState, features);
+        INDArray policy = Nd4j.create(output.policy(), new int[] {BOARD_SIZE, BOARD_SIZE});
+        INDArray value = Nd4j.createFromArray(output.value());
+        INDArray mask = Nd4j.ones(BOARD_SIZE, BOARD_SIZE);
+
+        for (int i = 0; i < BOARD_SIZE; i++) {
+            for (int j = 0; j < BOARD_SIZE; j++) {
+                if (!gameState.isLegalMove(new Move(new Position(i, j)))) {
+                    mask.putScalar(i, j, 0.0f);
+                }
+            }
+        }
+
+        return new MultiDataSet(
+                new INDArray[] {features},
+                new INDArray[] {policy, value},
+                null,
+                new INDArray[] {mask}
+        );
     }
 
     public record Output(float[] policy, float value) implements Cloneable {

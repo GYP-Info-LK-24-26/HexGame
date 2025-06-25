@@ -86,12 +86,18 @@ public class GameState implements Cloneable {
 
     public boolean isLegalMove(Move move) {
         Position targetPosition = move.targetHexagon();
-        return getPiece(targetPosition) == null || targetPosition.equals(lastChangedPosition);
+        return getPiece(targetPosition) == null || (halfMoveCounter == 1 && targetPosition.equals(lastChangedPosition));
     }
 
     //this makes a move,it also accommodates the change of color by a player by not switching the color that is currently at play
     public void makeMove(Move move) {
-        if (getPiece(move.targetHexagon()) == null) { // The target hexagon may be invalid for switching sides.
+        if (!isLegalMove(move)) {
+            throw new IllegalStateException(
+                    String.format("%s tried to play the illegal move %s", sideToMove, move)
+            );
+        }
+
+        if (getPiece(move.targetHexagon()) == null) { // The target hexagon may be occupied for switching sides.
             setPiece(move.targetHexagon(), new Piece(sideToMove));
             switchSideToMove();
         }
