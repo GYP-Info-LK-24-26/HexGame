@@ -75,10 +75,6 @@ public class GameState implements Cloneable {
         halfMoveCounter = 0;
     }
 
-    public void resetOnePiece(int position) {
-        pieces[position] = null;
-    }
-
     public void setPiece(Position position, Piece piece) {
         Piece previousPiece = getPiece(position);
         if (previousPiece != null) {
@@ -95,13 +91,10 @@ public class GameState implements Cloneable {
 
     //this makes a move,it also accommodates the change of color by a player by not switching the color that is currently at play
     public void makeMove(Move move) {
-        if (isLegalMove(move)) { // The target hexagon may be invalid for switching sides.
+        if (getPiece(move.targetHexagon()) == null) { // The target hexagon may be invalid for switching sides.
             setPiece(move.targetHexagon(), new Piece(sideToMove));
             switchSideToMove();
-        }else if(!move.targetHexagon().equals(lastChangedPosition))
-            throw new IllegalStateException(
-                String.format("%s tried to play the illegal move %s", sideToMove, move)
-        );
+        }
         lastChangedPosition = move.targetHexagon();
         playerMoveListeners.forEach(listener -> listener.onPlayerMove(move.targetHexagon()));
         halfMoveCounter++;
@@ -116,7 +109,7 @@ public class GameState implements Cloneable {
     }
 
     //updates the connected pieces so that the connection states are up to play
-    private void update(Position position) {
+    public void update(Position position) {
         Piece piece = getPiece(position);
         if (piece.getColor() == Piece.Color.RED) {
             if (position.column() == 0) {
@@ -198,7 +191,9 @@ public class GameState implements Cloneable {
             GameState clone = (GameState) super.clone();
             clone.pieces = pieces.clone();
             for (int i = 0; i < pieces.length; i++) {
-                clone.pieces[i] = pieces[i].clone();
+                if (pieces[i] != null) {
+                    clone.pieces[i] = pieces[i].clone();
+                }
             }
             return clone;
         } catch (CloneNotSupportedException e) {

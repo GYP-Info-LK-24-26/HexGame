@@ -11,14 +11,14 @@ public class Run {
         algorithm = new Algorithm();
     }
 
-    public Position start(int movesToCalculate, GameState gameState) {
+    public Position start(double movesToCalculate, GameState gameState) {
         Position temp;
-        if (movesToCalculate == 1) {
-            temp = algorithm.bestPosition(gameState);
-        }
-        else {
-            temp = algorithm.bestPositionIn2(gameState);
-        }
+        if (movesToCalculate == 1) {temp = algorithm.bestPosition(gameState);}
+        else if (movesToCalculate == 2){temp = algorithm.bestPositionIn2(gameState);}
+        else if (movesToCalculate == 2.5){temp = algorithm.bestPositionIn2AndAHalf(gameState);}
+        else if (movesToCalculate == 3){temp = algorithm.bestPositionIn3(gameState);}
+        else if (movesToCalculate == 4){temp = algorithm.betterAlgorithm(gameState);}
+        else {temp = algorithm.betterAlgorithmIn2(gameState);}
         return temp;
     }
 }
