@@ -4,6 +4,7 @@ import de.hexgame.logic.GameState;
 import de.hexgame.logic.Move;
 import de.hexgame.logic.Player;
 import de.hexgame.logic.Util;
+import de.igelstudios.ClientMain;
 
 public class UIPlayer implements Player {
     //TODO add name setting in settings menu
@@ -34,6 +35,7 @@ public class UIPlayer implements Player {
         if(nextMove == null)return Util.generateRandomMove(gameState);
         Move ret = nextMove;
         nextMove = null;
+        System.out.println(ClientMain.getInstance().getEngine().getFPS());
         return ret;
     }
 }

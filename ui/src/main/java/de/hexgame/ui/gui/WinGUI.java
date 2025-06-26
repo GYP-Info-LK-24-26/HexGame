@@ -21,7 +21,10 @@ public class WinGUI extends GUI {
         btn.addListener(new ButtonClickEvent() {
             @Override
             public void clicked(MouseButton button) {
-                if(button == MouseButton.LMB)new MainGUI();
+                if(button == MouseButton.LMB){
+                    UIGameBoard.get().transparent();
+                    new MainGUI();
+                }
             }
         });
     }

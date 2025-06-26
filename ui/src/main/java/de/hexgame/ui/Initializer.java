@@ -25,13 +25,13 @@ public class Initializer implements EngineInitializer,KeyListener {
         HIDInput.activateListener(this);
 
         /*UIGameBoard.get().startRendering();
-        //here one may add two opposing Players for startup,note that when setting two random players a timeout should be introduced so that the players do not move faster then the human can see
+        //here one may add two opposing Players for startup,note that when setting two random players a timeout should be introduced so that the players do not move faster than the human can see
         UIPlayer local = new UIPlayer();
         UIGameBoard.setCurrentUIPlayer(local);
         Game game = new Game(local,new RandomPlayer());
         game.getGameState().addPlayerMoveListener(UIGameBoard.get());
         UIGameBoard.setGameState(game.getGameState());
-        game.start();*/
+        game.asThread().start();*/
     }
 
     @Override

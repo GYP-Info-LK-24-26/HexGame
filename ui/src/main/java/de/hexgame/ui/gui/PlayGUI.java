@@ -29,13 +29,21 @@ public class PlayGUI extends GUI {
             playerList = new ArrayList<>();
             for (String playerName : playerNames) {
                 try {
-                    playerList.add((Class<? extends Player>) Class.forName(playerName));
+                    Class<?> clazz = null;
+                    try {
+                        clazz = Class.forName(playerName);
+                    }catch (ClassNotFoundException ignored){
+
+                    }
+                    if(clazz != null){
+                        playerList.add((Class<? extends Player>) clazz);
+                    }
                 }catch (ClassCastException e){
                     throw new RuntimeException("Player Class has to inherit Player but " + playerName + " does not",e);
                 }
 
             }
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
