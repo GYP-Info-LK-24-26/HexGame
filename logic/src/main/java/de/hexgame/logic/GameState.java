@@ -75,7 +75,7 @@ public class GameState implements Cloneable {
         halfMoveCounter = 0;
     }
 
-    protected void setPiece(Position position, Piece piece) {
+    public void setPiece(Position position, Piece piece) {
         Piece previousPiece = getPiece(position);
         if (previousPiece != null) {
             throw new IllegalArgumentException(String.format("Piece at %s already exists", position));
@@ -86,18 +86,21 @@ public class GameState implements Cloneable {
 
     public boolean isLegalMove(Move move) {
         Position targetPosition = move.targetHexagon();
-        return getPiece(targetPosition) == null || (targetPosition.equals(lastChangedPosition) && halfMoveCounter == 1);
+        return getPiece(targetPosition) == null || (halfMoveCounter == 1 && targetPosition.equals(lastChangedPosition));
     }
 
     //this makes a move,it also accommodates the change of color by a player by not switching the color that is currently at play
     public void makeMove(Move move) {
-        if (isLegalMove(move)) { // The target hexagon may be invalid for switching sides.
+        if (!isLegalMove(move)) {
+            throw new IllegalStateException(
+                    String.format("%s tried to play the illegal move %s", sideToMove, move)
+            );
+        }
+
+        if (getPiece(move.targetHexagon()) == null) { // The target hexagon may be occupied for switching sides.
             setPiece(move.targetHexagon(), new Piece(sideToMove));
             switchSideToMove();
-        }else if(!move.targetHexagon().equals(lastChangedPosition))
-            throw new IllegalStateException(
-                String.format("%s tried to play the illegal move %s", sideToMove, move)
-        );
+        }
         lastChangedPosition = move.targetHexagon();
         playerMoveListeners.forEach(listener -> listener.onPlayerMove(move.targetHexagon()));
         halfMoveCounter++;
@@ -112,7 +115,7 @@ public class GameState implements Cloneable {
     }
 
     //updates the connected pieces so that the connection states are up to play
-    private void update(Position position) {
+    public void update(Position position) {
         Piece piece = getPiece(position);
         if (piece.getColor() == Piece.Color.RED) {
             if (position.column() == 0) {
@@ -194,7 +197,9 @@ public class GameState implements Cloneable {
             GameState clone = (GameState) super.clone();
             clone.pieces = pieces.clone();
             for (int i = 0; i < pieces.length; i++) {
-                clone.pieces[i] = pieces[i].clone();
+                if (pieces[i] != null) {
+                    clone.pieces[i] = pieces[i].clone();
+                }
             }
             return clone;
         } catch (CloneNotSupportedException e) {
