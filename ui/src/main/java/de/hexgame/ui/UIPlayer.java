@@ -16,8 +16,10 @@ public class UIPlayer implements Player {
     private boolean isMoving = false;
     private Move nextMove = null;
     private long maxMoveTime = 0L;
+    private GameState gameState;
     public synchronized void makeMove(Move move) {
         if(!isMoving)return;
+        if(!move.targetHexagon().isValid() || !gameState.isLegalMove(move))return;
         nextMove = move;
         notify();
     }
@@ -25,6 +27,7 @@ public class UIPlayer implements Player {
     @Override
     public synchronized Move think(GameState gameState) {
         isMoving = true;
+        this.gameState = gameState;
         try {
             if(maxMoveTime <= 0L)wait();
             else wait(maxMoveTime);

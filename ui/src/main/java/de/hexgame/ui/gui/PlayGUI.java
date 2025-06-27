@@ -52,7 +52,7 @@ public class PlayGUI extends GUI {
 
         Button startBtn = new Button(new Vector2f(36,34),new Vector2f(1,4));
         addButton(startBtn);
-        render(Text.translatable("start"),36,34);
+        render(Text.translatable("start").setColor(0,1,0),36,34);
         startBtn.addListener(new ButtonClickEvent() {
             @Override
             public void clicked(MouseButton button) {
@@ -63,13 +63,13 @@ public class PlayGUI extends GUI {
                     if(first instanceof UIPlayer && second instanceof UIPlayer)return;
                     if(first instanceof UIPlayer)UIGameBoard.setCurrentUIPlayer((UIPlayer) first);
                     if(second instanceof UIPlayer)UIGameBoard.setCurrentUIPlayer((UIPlayer) second);
-                    Renderer.get().clear();
-                    UIGameBoard.get().startRendering();
+                    //Renderer.get().clear();
                     Game game = new Game(first, second);
                     game.getGameState().addPlayerMoveListener(UIGameBoard.get());
                     game.addPlayerWinListener(WinGUI::new);
                     UIGameBoard.setGameState(game.getGameState());
                     game.asThread().start();
+                    UIGameBoard.get().startRendering();
                 } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                          NoSuchMethodException e) {
                     throw new RuntimeException(e);
@@ -80,28 +80,28 @@ public class PlayGUI extends GUI {
         for (int i = 0; i < playerList.size(); i++) {
             final int id = i;
 
-            Text firstText = Text.translatable(playerList.get(i).getName());
+            Text firstText = Text.translatable(playerList.get(i).getName()).setColor(0,1,0);
             render(firstText,30,30 - i * 4);
             Button first = new Button(new Vector2f(30,30 - i * 4),new Vector2f(5,1));
             addButton(first);
             first.addListener(new ButtonClickEvent() {
                 @Override
                 public void clicked(MouseButton button) {
-                    if(firstID != -1)firstTexts.get(firstID).setColor(0,0,0);
+                    if(firstID != -1)firstTexts.get(firstID).setColor(0,1,0);
                     firstID = id;
-                    firstText.setColor(255,0,0);
+                    firstText.setColor(1,0,0);
                 }
             });
             firstTexts.add(firstText);
 
-            Text secondText = Text.translatable(playerList.get(i).getName());
+            Text secondText = Text.translatable(playerList.get(i).getName()).setColor(0,1,0);
             render(secondText,40,30 - i * 4);
             Button second = new Button(new Vector2f(40,30 - i * 4),new Vector2f(5,1));
             addButton(second);
             second.addListener(new ButtonClickEvent() {
                 @Override
                 public void clicked(MouseButton button) {
-                    if(secondID != -1) secondTexts.get(secondID).setColor(0,0,0);
+                    if(secondID != -1) secondTexts.get(secondID).setColor(0,1,0);
                     secondID = id;
                     secondText.setColor(1,0,0);
                 }
