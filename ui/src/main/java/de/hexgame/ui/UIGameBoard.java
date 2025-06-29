@@ -48,8 +48,9 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
     }
 
     public void resumeRendering(){
-        lineList.forEach(line -> line.setRGBA(0,0,0,1));
-        hexagonList.forEach(hex -> hex.setRGBA(0,0,0,0));
+        lineList.forEach(line -> line.setA(1));
+        hexagonList.forEach(hex -> hex.setRGBA(1,1,1,1));
+        cornerList.forEach(hex -> hex.setA(1));
 
         HIDInput.activateListener(this);
     }
@@ -59,7 +60,10 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
     //this case
     public void startRendering(){
 
-        if(rendering)resumeRendering();
+        if(rendering){
+            resumeRendering();
+            return;
+        }
         rendering = true;
         //TexturePool.getID("red_hex.png");
         //TexturePool.getID("blue_hex.png");
@@ -83,8 +87,6 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
         Line base = new Line(new Vector2f(leftOffset, 45 - length * 2),90,length,0.25f, Line.Type.CENTER).setRGBA(1,0,0,1);
         lineList.add(base);
         Renderer.get().render(base);
-
-
 
         for (int i = 0; i < GameState.BOARD_SIZE; i++) {
             Line topLeft = base.cloneFromEnd(30, length, 0.25f, Line.Type.CENTER).setRGBA(0,0,1,1);
@@ -110,11 +112,24 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
             lineList.add(botLeft);
             Renderer.get().render(botLeft);
 
-            Polygon p = Polygon.fromLines(topLeft,topRight,baseCPY,botRight,botLeft,base);
+            Polygon p = Polygon.fromLines(topLeft,topRight,baseCPY,botRight,botLeft,base).setRGBA(1,1,1,1);
             hexagonList.add(p);
+            Renderer.get().render(p);
 
             base = baseCPY.mirrored();
         }
+
+        Polygon corn = new Polygon(lineList.get(0).getEndUp(),lineList.get(1).getStartUp(),lineList.get(0).getEndOrg()).setRGBA(1,0,0,1);
+        cornerList.add(corn);
+        Renderer.get().render(corn);
+        corn = new Polygon(lineList.get(0).getStartUp(),lineList.get(5).getEndUp(),lineList.get(0).getOrg()).setRGBA(1,0,0,1);
+        cornerList.add(corn);
+        Renderer.get().render(corn);
+
+        Line st = lineList.get(lineList.size() - 4);
+        corn = new Polygon(lineList.get(lineList.size() - 3).getStartUp(),lineList.get(lineList.size() - 3).getOrg(),st.getEndUp()).setRGBA(1,0,0,1);
+        cornerList.add(corn);
+        Renderer.get().render(corn);
 
         int currentID = 8;
         for (int i = 0; i < GameState.BOARD_SIZE - 1; i++) {
@@ -163,8 +178,9 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
                 Line l = lineList.get(currentID - ((i >= 1 && (j == 9 || j == 0))?3:2));
                 if(i == 0)
                     l = j == 0?innerBase:innerBase.mirrored();
-                Polygon p = Polygon.fromLines(right,botRight,botLeft,l,topLeft,topRight);
+                Polygon p = Polygon.fromLines(right,botRight,botLeft,l,topLeft,topRight).setRGBA(1,1,1,1);
                 hexagonList.add(p);
+                Renderer.get().render(p);
                 innerBase = right;
                 currentID += i == 0?5:3;
             }
@@ -198,10 +214,19 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
             if(i == GameState.BOARD_SIZE - 2) {
                 botLeft.setRGBA(0,0,1,1);
                 botRight.setRGBA(0,0,1,1);
+
+                Polygon botCorn = new Polygon(botLeft.getOrg(),botLeft.getStartUp(),botRight.getEndUp()).setRGBA(0,0,1,1);
+                cornerList.add(botCorn);
+                Renderer.get().render(botCorn);
+
+                Polygon rightCorn = new Polygon(right.getEndUp(),right.getEndOrg(),botRight.getStartUp()).setRGBA(1,0,0,1);
+                cornerList.add(rightCorn);
+                Renderer.get().render(rightCorn);
             }
 
-            Polygon p = Polygon.fromLines(topLeft,topRight,right,botRight,botLeft,innerBase);
+            Polygon p = Polygon.fromLines(topLeft,topRight,right,botRight,botLeft,innerBase).setRGBA(1,1,1,1);
             hexagonList.add(p);
+            Renderer.get().render(p);
 
             currentID += i == 0?2:-1;
         }
@@ -250,7 +275,7 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
         Polygon hex = hexagonList.get(move.getIndex());
         if(gameState.getPiece(move).getColor() == Piece.Color.RED)hex.setRGBA(1,0,0,1);
         else hex.setRGBA(0,0,1,1);
-        Renderer.get().render(hex);
+        //Renderer.get().render(hex);
         //SceneObject obj = new SceneObject().setTex(TexturePool.getID(gameState.getPiece(move).getColor() == Piece.Color.RED? "red_hex.png":"blue_hex.png")).setSize(uniformSize);
         //if(gameState.getPiece(move).getColor() == Piece.Color.RED){
 
@@ -265,7 +290,6 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
     @KeyHandler("LMB")
     public void lmb(boolean pressed,double x,double y){
         if(!pressed)return;
-        System.out.println(ClientMain.getInstance().getEngine().getFPS());
         Position pos = Util.convertToGameCords(x, y);
         Move move = new Move(pos);
         localPlayer.makeMove(move);
@@ -297,7 +321,8 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
 
     public void transparent(){
         hexagonList.forEach(hex -> hex.setA(0.5f));
-        lineList.forEach(line -> line.setRGBA(0,0,0,0.5f));
+        lineList.forEach(line -> line.setA(0.5f));
+        cornerList.forEach(corner -> corner.setA(0.5f));
 
         HIDInput.deactivateListener(this);
     }

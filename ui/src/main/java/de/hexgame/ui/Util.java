@@ -18,8 +18,6 @@ public class Util {
         double delta = deltaY - deltaX;
         double xVal = deltaX; //(deltaX - 0.5) / 0.5;
         double yVal = deltaY; //(0.35 - (deltaY - 0.65)) / 0.35;
-        if(!tip)System.err.println((xVal) + ":" + yVal + "," + (yVal > -0.6*(xVal - 0.5) + 0.95) + ";" + deltaX + "," + delta);
-        else System.out.println((xVal) + ":" + yVal + "," + (yVal > -0.6*(xVal - 0.5) + 0.95) + ";" + deltaX + "," + delta);
         //((0.35 - (deltaY - 0.65)) <= (-0.5 + deltaX) * 2/3)
         if(tip){
             if(deltaX > 0.6 && yVal > -0.6*(xVal - 0.5) + 0.95){
