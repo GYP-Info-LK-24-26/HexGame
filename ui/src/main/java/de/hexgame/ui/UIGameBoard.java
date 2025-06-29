@@ -3,6 +3,7 @@ package de.hexgame.ui;
 import de.hexgame.logic.*;
 
 import de.igelstudios.ClientMain;
+import de.igelstudios.igelengine.client.graphics.AlphaColoredObject;
 import de.igelstudios.igelengine.client.graphics.Line;
 import de.igelstudios.igelengine.client.graphics.Polygon;
 import de.igelstudios.igelengine.client.graphics.Renderer;
@@ -25,6 +26,7 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
     private static UIGameBoard instance;
     private GameState gameState;
     private List<Line> lineList;
+    private List<Polygon> cornerList;
     private List<Polygon> hexagonList;
     //this is the time that has pass between turn to avoid graphical overloading
     private static final int MIN_TIME_PER_TURN = 100;
@@ -41,12 +43,13 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
 
     private UIGameBoard() {
         lineList = new ArrayList<>();
+        cornerList = new ArrayList<>();
         hexagonList = new ArrayList<>();
     }
 
     public void resumeRendering(){
         lineList.forEach(line -> line.setRGBA(0,0,0,1));
-        hexagonList.forEach(hex -> hex.setColor(0,0,0,0));
+        hexagonList.forEach(hex -> hex.setRGBA(0,0,0,0));
 
         HIDInput.activateListener(this);
     }
@@ -90,6 +93,9 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
             Line topRight = topLeft.cloneFromEnd(330, length, 0.25f, Line.Type.CENTER).setRGBA(0,0,1,1);
             lineList.add(topRight);
             Renderer.get().render(topRight);
+            Polygon corner = new Polygon(topLeft.getEndUp(),topRight.getStartUp(),topLeft.getEndOrg()).setRGBA(0,0,1,1);
+            cornerList.add(corner);
+            Renderer.get().render(corner);
 
             Line baseCPY = topRight.cloneFromEnd(-90,length,0.25f, Line.Type.CENTER);
             lineList.add(baseCPY);
@@ -133,6 +139,10 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
                 if(i == GameState.BOARD_SIZE - 2) {
                     botLeft.setRGBA(0,0,1,1);
                     botRight.setRGBA(0,0,1,1);
+
+                    Polygon corner = new Polygon(botLeft.getStartUp(),botRight.getEndUp(),botRight.getEndOrg()).setRGBA(0,0,1,1);
+                    cornerList.add(corner);
+                    Renderer.get().render(corner);
                 }
 
                 if(innerBase == null) {
@@ -140,6 +150,10 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
                     lineList.add(innerBase);
                     Renderer.get().render(innerBase);
                     botLeft.setRGBA(1,0,0,1);
+
+                    Polygon p = new Polygon(innerBase.getStartUp(),botLeft.getEndUp(),innerBase.getOrg()).setRGBA(1,0,0,1);
+                    cornerList.add(p);
+                    Renderer.get().render(p);
                 }
 
                 //if(i >= 1 && j == 9) {
@@ -161,11 +175,18 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
             Renderer.get().render(topRight);
             Line right = topRight.cloneFromEnd(-90, length, 0.25f, Line.Type.CENTER).setRGBA(1,0,0,1);
             lineList.add(right);
-            Renderer.get().render(right);
+
+
+            Polygon corner = new Polygon(topRight.getEndUp(),right.getStartUp(),right.getOrg()).setRGBA(1,0,0,1);
+            cornerList.add(corner);
+            Renderer.get().render(corner);
 
             Line botRight = right.cloneFromEnd(-150, length, 0.25f, Line.Type.CENTER);
             lineList.add(botRight);
             Renderer.get().render(botRight);
+
+            Renderer.get().render(right);
+
             Line botLeft = botRight.cloneFromEnd(150, length, 0.25f, Line.Type.CENTER);
             lineList.add(botLeft);
             Renderer.get().render(botLeft);
@@ -227,8 +248,8 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
             }
         }
         Polygon hex = hexagonList.get(move.getIndex());
-        if(gameState.getPiece(move).getColor() == Piece.Color.RED)hex.setColor(1,0,0,1);
-        else hex.setColor(0,0,1,1);
+        if(gameState.getPiece(move).getColor() == Piece.Color.RED)hex.setRGBA(1,0,0,1);
+        else hex.setRGBA(0,0,1,1);
         Renderer.get().render(hex);
         //SceneObject obj = new SceneObject().setTex(TexturePool.getID(gameState.getPiece(move).getColor() == Piece.Color.RED? "red_hex.png":"blue_hex.png")).setSize(uniformSize);
         //if(gameState.getPiece(move).getColor() == Piece.Color.RED){
@@ -247,8 +268,7 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
         System.out.println(ClientMain.getInstance().getEngine().getFPS());
         Position pos = Util.convertToGameCords(x, y);
         Move move = new Move(pos);
-        if(gameState.isLegalMove(move))localPlayer.makeMove(move);
-
+        localPlayer.makeMove(move);
     }
 
     public UIPlayer getLocalPlayer() {
