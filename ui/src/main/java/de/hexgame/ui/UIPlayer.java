@@ -8,7 +8,7 @@ import de.igelstudios.ClientMain;
 
 public class UIPlayer implements Player {
     //TODO add name setting in settings menu
-    private final String playerName = "";
+    private String playerName = "";
     @Override
     public String getName() {
         return playerName;
@@ -26,6 +26,7 @@ public class UIPlayer implements Player {
 
     @Override
     public synchronized Move think(GameState gameState) {
+        playerName = gameState.getSideToMove().toString();
         isMoving = true;
         this.gameState = gameState;
         try {

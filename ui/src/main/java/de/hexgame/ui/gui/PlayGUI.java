@@ -60,9 +60,9 @@ public class PlayGUI extends GUI {
                     GUIManager.removeGui();
                     Player first = playerList.get(firstID).getConstructor().newInstance();
                     Player second = playerList.get(secondID).getConstructor().newInstance();
-                    if(first instanceof UIPlayer && second instanceof UIPlayer)return;
-                    if(first instanceof UIPlayer)UIGameBoard.setCurrentUIPlayer((UIPlayer) first);
-                    if(second instanceof UIPlayer)UIGameBoard.setCurrentUIPlayer((UIPlayer) second);
+                    //if(first instanceof UIPlayer && second instanceof UIPlayer)return;
+                    if(first instanceof UIPlayer)UIGameBoard.addPlayer((UIPlayer) first);
+                    if(second instanceof UIPlayer)UIGameBoard.addPlayer((UIPlayer) second);
                     //Renderer.get().clear();
                     Game game = new Game(first, second);
                     game.getGameState().addPlayerMoveListener(UIGameBoard.get());
