@@ -6,6 +6,8 @@ import de.igelstudios.igelengine.client.graphics.Line;
 import de.igelstudios.igelengine.client.graphics.Polygon;
 import de.igelstudios.igelengine.client.graphics.Renderer;
 import de.igelstudios.igelengine.client.keys.*;
+import de.igelstudios.igelengine.common.networking.PacketByteBuf;
+import de.igelstudios.igelengine.common.networking.client.Client;
 import org.joml.Vector2f;
 
 import java.util.ArrayList;
@@ -35,6 +37,7 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
     private float topOffset;
     private float yScale;
     private boolean rendering;
+    private boolean isRemote = false;
 
     private UIGameBoard() {
         lineList = new ArrayList<>();
@@ -288,7 +291,12 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
         if(!pressed)return;
         Position pos = Util.convertToGameCords(x, y);
         Move move = new Move(pos);
-        playerList.forEach(uiPlayer -> uiPlayer.makeMove(move));
+        if(isRemote){
+            PacketByteBuf buf = PacketByteBuf.create();
+            buf.writeLong(System.currentTimeMillis());
+            buf.writeInt(pos.getIndex());
+            Client.send2Server("makeMove",buf);
+        }else playerList.forEach(uiPlayer -> uiPlayer.makeMove(move));
     }
 
     public List<UIPlayer> getLocalPlayers() {
@@ -323,5 +331,13 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
         playerList.clear();
 
         HIDInput.deactivateListener(this);
+    }
+
+    public GameState getGameState() {
+        return gameState;
+    }
+
+    public void setRemote(boolean remote) {
+        isRemote = remote;
     }
 }

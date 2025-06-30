@@ -82,6 +82,7 @@ public class GameState implements Cloneable {
         }
         pieces[position.getIndex()] = piece;
         update(position);
+        playerMoveListeners.forEach(listener -> listener.onPlayerMove(position));
     }
 
     public boolean isLegalMove(Move move) {
@@ -102,7 +103,7 @@ public class GameState implements Cloneable {
             switchSideToMove();
         }
         lastChangedPosition = move.targetHexagon();
-        playerMoveListeners.forEach(listener -> listener.onPlayerMove(move.targetHexagon()));
+
         halfMoveCounter++;
     }
 
