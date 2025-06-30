@@ -3,6 +3,7 @@ package de.hexgame.ui;
 import de.hexgame.logic.*;
 
 import de.igelstudios.ClientMain;
+import de.igelstudios.igelengine.client.graphics.AlphaColoredObject;
 import de.igelstudios.igelengine.client.graphics.Line;
 import de.igelstudios.igelengine.client.graphics.Polygon;
 import de.igelstudios.igelengine.client.graphics.Renderer;
@@ -25,6 +26,7 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
     private static UIGameBoard instance;
     private GameState gameState;
     private List<Line> lineList;
+    private List<Polygon> cornerList;
     private List<Polygon> hexagonList;
     //this is the time that has pass between turn to avoid graphical overloading
     private static final int MIN_TIME_PER_TURN = 100;
@@ -41,20 +43,27 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
 
     private UIGameBoard() {
         lineList = new ArrayList<>();
+        cornerList = new ArrayList<>();
         hexagonList = new ArrayList<>();
     }
 
     public void resumeRendering(){
-        lineList.forEach(line -> line.setRGBA(0,0,0,1));
-        hexagonList.forEach(hex -> hex.setColor(0,0,0,0));
+        lineList.forEach(line -> line.setA(1));
+        hexagonList.forEach(hex -> hex.setRGBA(1,1,1,1));
+        cornerList.forEach(hex -> hex.setA(1));
+
+        HIDInput.activateListener(this);
     }
 
     //this loads every necessary texture and creates the background for the board
     //to minimize the numbers of sampler textures are used twice and rotated
     //this case
     public void startRendering(){
-        HIDInput.activateListener(this);
-        if(rendering)resumeRendering();
+
+        if(rendering){
+            resumeRendering();
+            return;
+        }
         rendering = true;
         //TexturePool.getID("red_hex.png");
         //TexturePool.getID("blue_hex.png");
@@ -75,19 +84,20 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
         scale = (float) 45 / ((GameState.BOARD_SIZE + 1));
         yScale = length * 1.5f;
 
-        Line base = new Line(new Vector2f(leftOffset, 45 - length * 2),90,length,0.25f, Line.Type.RIGHT);
+        Line base = new Line(new Vector2f(leftOffset, 45 - length * 2),90,length,0.25f, Line.Type.CENTER).setRGBA(1,0,0,1);
         lineList.add(base);
         Renderer.get().render(base);
 
-
-
         for (int i = 0; i < GameState.BOARD_SIZE; i++) {
-            Line topLeft = base.cloneFromEnd(30, length, 0.25f, Line.Type.RIGHT);
+            Line topLeft = base.cloneFromEnd(30, length, 0.25f, Line.Type.CENTER).setRGBA(0,0,1,1);
             lineList.add(topLeft);
             Renderer.get().render(topLeft);
-            Line topRight = topLeft.cloneFromEnd(330, length, 0.25f, Line.Type.RIGHT);
+            Line topRight = topLeft.cloneFromEnd(330, length, 0.25f, Line.Type.CENTER).setRGBA(0,0,1,1);
             lineList.add(topRight);
             Renderer.get().render(topRight);
+            Polygon corner = new Polygon(topLeft.getEndUp(),topRight.getStartUp(),topLeft.getEndOrg()).setRGBA(0,0,1,1);
+            cornerList.add(corner);
+            Renderer.get().render(corner);
 
             Line baseCPY = topRight.cloneFromEnd(-90,length,0.25f, Line.Type.CENTER);
             lineList.add(baseCPY);
@@ -97,21 +107,36 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
             lineList.add(botRight);
             Renderer.get().render(botRight);
             Line botLeft = botRight.cloneFromEnd(150, length, 0.25f, Line.Type.CENTER);
+            if(i == 0)botLeft.setRGBA(1,0,0,1);
+            if(i == GameState.BOARD_SIZE - 1)baseCPY.setRGBA(1,0,0,1);
             lineList.add(botLeft);
             Renderer.get().render(botLeft);
 
-            Polygon p = Polygon.fromLines(topLeft,topRight,baseCPY,botRight,botLeft,base);
+            Polygon p = Polygon.fromLines(topLeft,topRight,baseCPY,botRight,botLeft,base).setRGBA(1,1,1,1);
             hexagonList.add(p);
+            Renderer.get().render(p);
 
             base = baseCPY.mirrored();
         }
+
+        Polygon corn = new Polygon(lineList.get(0).getEndUp(),lineList.get(1).getStartUp(),lineList.get(0).getEndOrg()).setRGBA(1,0,0,1);
+        cornerList.add(corn);
+        Renderer.get().render(corn);
+        corn = new Polygon(lineList.get(0).getStartUp(),lineList.get(5).getEndUp(),lineList.get(0).getOrg()).setRGBA(1,0,0,1);
+        cornerList.add(corn);
+        Renderer.get().render(corn);
+
+        Line st = lineList.get(lineList.size() - 4);
+        corn = new Polygon(lineList.get(lineList.size() - 3).getStartUp(),lineList.get(lineList.size() - 3).getOrg(),st.getEndUp()).setRGBA(1,0,0,1);
+        cornerList.add(corn);
+        Renderer.get().render(corn);
 
         int currentID = 8;
         for (int i = 0; i < GameState.BOARD_SIZE - 1; i++) {
             Line innerBase = null;
             for (int j = 0; j < GameState.BOARD_SIZE - 1; j++) {
                 if(i >= 1 && j == 9) {
-                    currentID++;
+                   currentID++;
                 }else if(i >= 2 && j == 0)currentID += 6;
                 Line topLeft = lineList.get(currentID + 2);
                 Line topRight = lineList.get(currentID + 1);
@@ -126,10 +151,24 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
                 lineList.add(botLeft);
                 Renderer.get().render(botLeft);
 
+                if(i == GameState.BOARD_SIZE - 2) {
+                    botLeft.setRGBA(0,0,1,1);
+                    botRight.setRGBA(0,0,1,1);
+
+                    Polygon corner = new Polygon(botLeft.getStartUp(),botRight.getEndUp(),botRight.getEndOrg()).setRGBA(0,0,1,1);
+                    cornerList.add(corner);
+                    Renderer.get().render(corner);
+                }
+
                 if(innerBase == null) {
-                    innerBase = botLeft.cloneFromEnd(90, length, 0.25f, Line.Type.CENTER);
+                    innerBase = botLeft.cloneFromEnd(90, length, 0.25f, Line.Type.CENTER).setRGBA(1,0,0,1);
                     lineList.add(innerBase);
                     Renderer.get().render(innerBase);
+                    botLeft.setRGBA(1,0,0,1);
+
+                    Polygon p = new Polygon(innerBase.getStartUp(),botLeft.getEndUp(),innerBase.getOrg()).setRGBA(1,0,0,1);
+                    cornerList.add(p);
+                    Renderer.get().render(p);
                 }
 
                 //if(i >= 1 && j == 9) {
@@ -139,90 +178,61 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
                 Line l = lineList.get(currentID - ((i >= 1 && (j == 9 || j == 0))?3:2));
                 if(i == 0)
                     l = j == 0?innerBase:innerBase.mirrored();
-                Polygon p = Polygon.fromLines(right,botRight,botLeft,l,topLeft,topRight);
+                Polygon p = Polygon.fromLines(right,botRight,botLeft,l,topLeft,topRight).setRGBA(1,1,1,1);
                 hexagonList.add(p);
+                Renderer.get().render(p);
                 innerBase = right;
                 currentID += i == 0?5:3;
             }
 
             Line topLeft = lineList.get(currentID - (i == 0?5:3));
-            Line topRight = topLeft.cloneFromEnd(330, length, 0.25f, Line.Type.RIGHT);
+            Line topRight = topLeft.cloneFromEnd(330, length, 0.25f, Line.Type.CENTER).setRGBA(1,0,0,1);
             lineList.add(topRight);
             Renderer.get().render(topRight);
-            Line right = topRight.cloneFromEnd(-90, length, 0.25f, Line.Type.CENTER);
+            Line right = topRight.cloneFromEnd(-90, length, 0.25f, Line.Type.CENTER).setRGBA(1,0,0,1);
             lineList.add(right);
-            Renderer.get().render(right);
+
+
+            Polygon corner = new Polygon(topRight.getEndUp(),right.getStartUp(),right.getOrg()).setRGBA(1,0,0,1);
+            cornerList.add(corner);
+            Renderer.get().render(corner);
 
             Line botRight = right.cloneFromEnd(-150, length, 0.25f, Line.Type.CENTER);
             lineList.add(botRight);
             Renderer.get().render(botRight);
+
+            Renderer.get().render(right);
+
             Line botLeft = botRight.cloneFromEnd(150, length, 0.25f, Line.Type.CENTER);
             lineList.add(botLeft);
             Renderer.get().render(botLeft);
 
             innerBase = botLeft.cloneFromEnd(90, length, 0.25f, Line.Type.CENTER);
             lineList.add(innerBase);
-            Renderer.get().render(innerBase);
+            //Renderer.get().render(innerBase);
 
-            Polygon p = Polygon.fromLines(topLeft,topRight,right,botRight,botLeft,innerBase);
+            if(i == GameState.BOARD_SIZE - 2) {
+                botLeft.setRGBA(0,0,1,1);
+                botRight.setRGBA(0,0,1,1);
+
+                Polygon botCorn = new Polygon(botLeft.getOrg(),botLeft.getStartUp(),botRight.getEndUp()).setRGBA(0,0,1,1);
+                cornerList.add(botCorn);
+                Renderer.get().render(botCorn);
+
+                Polygon rightCorn = new Polygon(right.getEndUp(),right.getEndOrg(),botRight.getStartUp()).setRGBA(1,0,0,1);
+                cornerList.add(rightCorn);
+                Renderer.get().render(rightCorn);
+            }
+
+            Polygon p = Polygon.fromLines(topLeft,topRight,right,botRight,botLeft,innerBase).setRGBA(1,1,1,1);
             hexagonList.add(p);
+            Renderer.get().render(p);
 
             currentID += i == 0?2:-1;
         }
 
-        //topOffset = lineList.get(lineList.size() - 4).getStart().y;
         topOffset = lineList.getLast().getStart().y;
-
-        /*Line base = new Line(new Vector2f(12,2),new Vector2f(10,2),0.25F).setType(Line.Type.RIGHT);
-        Renderer.get().render(base);
-        base = base.cloneFromEnd(120,2,0.25f, Line.Type.RIGHT);
-        Renderer.get().render(base);
-        for (int i = 0; i < (GameState.BOARD_SIZE - 1); i++) {
-            base = base.cloneFromEnd(60,2,0.25f,Line.Type.RIGHT);
-            Renderer.get().render(base);
-            Line par = base.cloneFromEnd(0,2,0.25f,Line.Type.CENTER);
-            Renderer.get().render(par);
-            base = base.cloneFromEnd(120,2,0.25f,Line.Type.RIGHT);
-            Renderer.get().render(base);
-        }*/
-        //Renderer.get().render(new Line(new Vector2f(10,2),120,2,0.25F));
-        //Renderer.get().render(new Line(new Vector2f(10,2),0,2,0.25F));
-
-        /*SceneObject objHigh = new SceneObject().setTex(TexturePool.getID("left_top_hex.png")).setSize(uniformSize);
-        Renderer.get().render(objHigh,remainder,GameState.BOARD_SIZE * yScale * 1.5f);
-
-
-        SceneObject objLow = new SceneObject().setTex(TexturePool.getID("left_top_hex.png")).setSize(uniformSize).setRotation(2);
-        Renderer.get().render(objLow, ((float) (GameState.BOARD_SIZE - 1) / 2 + (GameState.BOARD_SIZE - 1)) * yScale + remainder, 1.5f * yScale);
-
-        SceneObject objLL = new SceneObject().setTex(TexturePool.getID("left_bot_hex.png")).setSize(uniformSize);
-        Renderer.get().render(objLL, ((float) (GameState.BOARD_SIZE - 1) / 2) * yScale + remainder, 1.5f * yScale);
-
-        SceneObject objRR = new SceneObject().setTex(TexturePool.getID("left_bot_hex.png")).setSize(uniformSize).setRotation(2);
-        Renderer.get().render(objRR,(GameState.BOARD_SIZE - 1) * yScale + remainder,GameState.BOARD_SIZE * yScale * 1.5f);
-
-        for (int i = 1; i < GameState.BOARD_SIZE - 1; i++) {
-            SceneObject objL = new SceneObject().setTex(TexturePool.getID("left_hex.png")).setSize(uniformSize);
-            Renderer.get().render(objL, ((float) (GameState.BOARD_SIZE - i - 1) / 2) * yScale + remainder,((i + 1) * 1.5f * yScale));
-
-            SceneObject objR = new SceneObject().setTex(TexturePool.getID("left_hex.png")).setSize(uniformSize).setRotation(2);
-            Renderer.get().render(objR, ((float) (GameState.BOARD_SIZE - i - 1) / 2 + (GameState.BOARD_SIZE - 1)) * yScale + remainder, ((float) ((i + 1) * 1.5 * yScale)));
-
-            SceneObject objH = new SceneObject().setTex(TexturePool.getID("top_hex.png")).setSize(uniformSize);
-            Renderer.get().render(objH,i * yScale + remainder,(GameState.BOARD_SIZE) * yScale * 1.5f);
-
-            SceneObject objD = new SceneObject().setTex(TexturePool.getID("top_hex.png")).setSize(uniformSize).setRotation(2);
-            Renderer.get().render(objD, ((float) (GameState.BOARD_SIZE - 1) / 2 + i) * yScale + remainder, 1.5f * yScale);
-        }
-
-
-        for (int i = 1; i < GameState.BOARD_SIZE - 1; i++) {
-            for (int j = 1; j < GameState.BOARD_SIZE - 1; j++) {
-                SceneObject obj = new SceneObject().setTex(TexturePool.getID("hex.png")).setSize(uniformSize);
-                Renderer.get().render(obj, ((float) (GameState.BOARD_SIZE - j - 1) / 2 + i) * yScale + remainder, (float) ((j + 1) * 1.5 * yScale));
-            }
-        }*/
-
+        HIDInput.activateListener(this);
     }
 
     /**
@@ -263,9 +273,9 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
             }
         }
         Polygon hex = hexagonList.get(move.getIndex());
-        if(gameState.getPiece(move).getColor() == Piece.Color.RED)hex.setColor(1,0,0,1);
-        else hex.setColor(0,0,1,1);
-        Renderer.get().render(hex);
+        if(gameState.getPiece(move).getColor() == Piece.Color.RED)hex.setRGBA(1,0,0,1);
+        else hex.setRGBA(0,0,1,1);
+        //Renderer.get().render(hex);
         //SceneObject obj = new SceneObject().setTex(TexturePool.getID(gameState.getPiece(move).getColor() == Piece.Color.RED? "red_hex.png":"blue_hex.png")).setSize(uniformSize);
         //if(gameState.getPiece(move).getColor() == Piece.Color.RED){
 
@@ -280,11 +290,9 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
     @KeyHandler("LMB")
     public void lmb(boolean pressed,double x,double y){
         if(!pressed)return;
-        System.out.println(ClientMain.getInstance().getEngine().getFPS());
         Position pos = Util.convertToGameCords(x, y);
         Move move = new Move(pos);
-        if(gameState.isLegalMove(move))localPlayer.makeMove(move);
-
+        localPlayer.makeMove(move);
     }
 
     public UIPlayer getLocalPlayer() {
@@ -313,6 +321,9 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
 
     public void transparent(){
         hexagonList.forEach(hex -> hex.setA(0.5f));
-        lineList.forEach(line -> line.setRGBA(0,0,0,0.5f));
+        lineList.forEach(line -> line.setA(0.5f));
+        cornerList.forEach(corner -> corner.setA(0.5f));
+
+        HIDInput.deactivateListener(this);
     }
 }

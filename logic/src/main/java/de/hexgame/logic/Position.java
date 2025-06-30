@@ -8,7 +8,7 @@ public record Position(int row, int column) {
     }
 
     public int getIndex() {
-        if (!isValid()) throw new RuntimeException("Position is not valid");
+        if (!isValid()) throw new RuntimeException("Position" + toString() + " is invalid");
         return row * BOARD_SIZE + column;
     }
 
