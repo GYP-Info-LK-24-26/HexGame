@@ -13,6 +13,7 @@ public class RemotePlayer implements Player, ClientNet {
     private boolean moving = false;
     private Position move;
     private UUID uuid;
+    private String playerName;
 
     @Override
     public String getName() {
@@ -51,5 +52,9 @@ public class RemotePlayer implements Player, ClientNet {
     @Override
     public void setUUID(UUID uuid) {
         this.uuid = uuid;
+    }
+
+    public void setPlayerName(String playerName) {
+        this.playerName = playerName;
     }
 }
