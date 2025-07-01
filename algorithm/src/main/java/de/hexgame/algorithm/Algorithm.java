@@ -78,12 +78,11 @@ public class Algorithm{
         return rating;
     }
 
-    public int countRow(Position position, Direction direction, GameState cGameState) {
-        int counter = 1;
+    public double countRow(Position position, GameState cGameState) {
+        int counter = 3;
         isVisited[position.getIndex()] = true;
         for (Direction direction1 : Direction.ALL) {
-            if (direction == direction1
-                    || !position.add(direction1).isValid()
+            if (!position.add(direction1).isValid()
                     || cGameState.getPiece(position.add(direction1)) == null) {
                 continue;
             }
@@ -91,7 +90,7 @@ public class Algorithm{
                     || isVisited[position.add(direction1).getIndex()]) {
                 continue;
             }
-            counter = counter + countRow(position.add(direction1), direction1.changeDirection(), cGameState);
+            counter = counter + (int) countRow(position.add(direction1), cGameState);
         }
         return counter;
     }
@@ -555,7 +554,10 @@ public class Algorithm{
                     continue;
                 }
                 tempOtherColorPosition = new Position(move1.targetHexagon().getIndex());
-                dummyOtherColorPiece = new Piece(otherColor);
+                cGameState.makeMove(move1);
+                if (cGameState.isFinished()) {
+                    return move.targetHexagon();
+                }
 
                 for (Direction otherColorDirection : Direction.ALL) {
                     tempOtherColorDirectionPosition = tempOtherColorPosition.add(otherColorDirection);
@@ -564,10 +566,10 @@ public class Algorithm{
                         continue;
                     }
                     if (cGameState.getPiece(tempOtherColorDirectionPosition).isConnectedLow()) {
-                        dummyOtherColorPiece.setConnectedLow(true);
+                        cGameState.getPiece(tempOtherColorDirectionPosition).setConnectedLow(true);
                     }
                     if (cGameState.getPiece(tempOtherColorDirectionPosition).isConnectedHigh()) {
-                        dummyOtherColorPiece.setConnectedHigh(true);
+                        cGameState.getPiece(tempOtherColorDirectionPosition).setConnectedHigh(true);
                     }
                 }
 
@@ -611,15 +613,16 @@ public class Algorithm{
             boolean tempHighConnect = false, tempLowConnect = false;
             tempPosition = new Position(i);
             move = new Move(tempPosition);
-            if (cGameState.getPiece(move.targetHexagon()) == null && move.targetHexagon().isValid()) {
+            if (cGameState.getPiece(move.targetHexagon()) == null) {
+                cGameState.switchSideToMove();
                 cGameState.makeMove(move);
+                cGameState.update(move.targetHexagon());
                 if (cGameState.isFinished()) {
                     return move.targetHexagon();
                 }
                 for (Direction direction: Direction.ALL) {
                     if (move.targetHexagon().add(direction).isValid()
-                            && cGameState.getPiece(move.targetHexagon().add(direction)) != null
-                            && cGameState.getPiece(move.targetHexagon().add(direction)).getColor() == otherColor) {
+                            && cGameState.getPiece(move.targetHexagon().add(direction)) != null) {
 
                         tempPiece = cGameState.getPiece(move.targetHexagon().add(direction));
 
@@ -629,18 +632,19 @@ public class Algorithm{
                         if (tempPiece.isConnectedLow()) {
                             tempLowConnect = true;
                         }
-                        if (cGameState.isFinished()) {
-                            return move.targetHexagon();
-                        }
                         if (otherColor == Piece.Color.RED) {
-                            if (tempPiece.isConnectedHigh() && move.targetHexagon().column() == 0 && move.targetHexagon().row() == move.targetHexagon().add(direction).row()
-                                    || tempPiece.isConnectedLow() && move.targetHexagon().column() == board - 1 && move.targetHexagon().row() == move.targetHexagon().add(direction).row()) {
+                            if (tempPiece.isConnectedHigh() && move.targetHexagon().column() == 0
+                                        && move.targetHexagon().row() == move.targetHexagon().add(direction).row()
+                                    || tempPiece.isConnectedLow() && move.targetHexagon().column() == board - 1
+                                        && move.targetHexagon().row() == move.targetHexagon().add(direction).row()) {
                                 return move.targetHexagon();
                             }
                         }
                         else {
-                            if (tempPiece.isConnectedHigh() && move.targetHexagon().row() == 0 && move.targetHexagon().column() == move.targetHexagon().add(direction).column()
-                                    || tempPiece.isConnectedLow() && move.targetHexagon().row() == board - 1 && move.targetHexagon().column() == move.targetHexagon().add(direction).column()) {
+                            if (tempPiece.isConnectedHigh() && move.targetHexagon().row() == 0
+                                        && move.targetHexagon().column() == move.targetHexagon().add(direction).column()
+                                    || tempPiece.isConnectedLow() && move.targetHexagon().row() == board - 1
+                                        && move.targetHexagon().column() == move.targetHexagon().add(direction).column()) {
                                 return move.targetHexagon();
                             }
                         }
@@ -651,8 +655,8 @@ public class Algorithm{
                 }
                 tempLength = calculatePieceRating(tempPosition, usedColor);
 
-                if (cGameState.getPiece(tempPosition).getColor() != usedColor) {
-                    tempLength = tempLength + countRow(tempPosition, null, cGameState);
+                if (cGameState.getPiece(tempPosition) != null && cGameState.getPiece(tempPosition).getColor() == otherColor) {
+                    tempLength = tempLength + countRow(tempPosition, cGameState) / cGameState.getHalfMoveCounter();
                 }
             }
             if (tempLength > bestLength) {

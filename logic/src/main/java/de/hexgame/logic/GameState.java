@@ -106,7 +106,7 @@ public class GameState implements Cloneable {
         halfMoveCounter++;
     }
 
-    private void switchSideToMove() {
+    public void switchSideToMove() {
         if (sideToMove == Piece.Color.RED) {
             sideToMove = Piece.Color.BLUE;
         } else {
