@@ -2,15 +2,12 @@ package de.hexgame.ui;
 
 import de.hexgame.logic.*;
 
-import de.igelstudios.ClientMain;
-import de.igelstudios.igelengine.client.graphics.AlphaColoredObject;
 import de.igelstudios.igelengine.client.graphics.Line;
 import de.igelstudios.igelengine.client.graphics.Polygon;
 import de.igelstudios.igelengine.client.graphics.Renderer;
-import de.igelstudios.igelengine.client.graphics.texture.TexturePool;
 import de.igelstudios.igelengine.client.keys.*;
-import de.igelstudios.igelengine.common.scene.SceneObject;
-import lombok.Getter;
+import de.igelstudios.igelengine.common.networking.PacketByteBuf;
+import de.igelstudios.igelengine.common.networking.client.Client;
 import org.joml.Vector2f;
 
 import java.util.ArrayList;
@@ -32,7 +29,7 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
     private static final int MIN_TIME_PER_TURN = 100;
     //this keeps track of the last time a move was made so that the minimum time can be enforced
     private long last_time_run = 0;
-    private UIPlayer localPlayer;
+    private List<UIPlayer> playerList;
     private Vector2f uniformSize;
     private float leftOffset;
     private float scale;
@@ -40,11 +37,13 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
     private float topOffset;
     private float yScale;
     private boolean rendering;
+    private boolean isRemote = false;
 
     private UIGameBoard() {
         lineList = new ArrayList<>();
         cornerList = new ArrayList<>();
         hexagonList = new ArrayList<>();
+        playerList = new ArrayList<>();
     }
 
     public void resumeRendering(){
@@ -253,11 +252,11 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
     }
 
     /**
-     * this sets the local {@link UIPlayer} for the instance e.g. the one that can make moves on this board
+     * this adds a {@link UIPlayer} for the instance e.g. the ones that can make moves on this board
      * @param uiPlayer the UIPlayer
      */
-    public static void setCurrentUIPlayer(UIPlayer uiPlayer) {
-        get().localPlayer = uiPlayer;
+    public static void addPlayer(UIPlayer uiPlayer) {
+        get().playerList.add(uiPlayer);
     }
 
     //this function runs everytime a player move was made to render the change(add the played hexagon)
@@ -292,11 +291,16 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
         if(!pressed)return;
         Position pos = Util.convertToGameCords(x, y);
         Move move = new Move(pos);
-        localPlayer.makeMove(move);
+        if(isRemote){
+            PacketByteBuf buf = PacketByteBuf.create();
+            buf.writeLong(System.currentTimeMillis());
+            buf.writeInt(pos.getIndex());
+            Client.send2Server("makeMove",buf);
+        }else playerList.forEach(uiPlayer -> uiPlayer.makeMove(move));
     }
 
-    public UIPlayer getLocalPlayer() {
-        return localPlayer;
+    public List<UIPlayer> getLocalPlayers() {
+        return playerList;
     }
 
     public float getLeftOffset() {
@@ -319,11 +323,21 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
         return yScale;
     }
 
-    public void transparent(){
+    public void endGame(){
         hexagonList.forEach(hex -> hex.setA(0.5f));
         lineList.forEach(line -> line.setA(0.5f));
         cornerList.forEach(corner -> corner.setA(0.5f));
 
+        playerList.clear();
+
         HIDInput.deactivateListener(this);
+    }
+
+    public GameState getGameState() {
+        return gameState;
+    }
+
+    public void setRemote(boolean remote) {
+        isRemote = remote;
     }
 }
