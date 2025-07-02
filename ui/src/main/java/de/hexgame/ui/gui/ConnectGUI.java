@@ -13,6 +13,7 @@ import org.joml.Vector2f;
 public class ConnectGUI extends GUI {
 
     public ConnectGUI() {
+        //Renderer.get().clear();
         GUIManager.setGUI(this);
         TextField hostField = new TextField(new Vector2f(35,35),new Vector2f(10,1));
         addTextField(hostField);
@@ -24,9 +25,9 @@ public class ConnectGUI extends GUI {
         Polygon background = new Polygon(new Vector2f(35,33),new Vector2f(45,33),new Vector2f(45,34),new Vector2f(35,34)).setRGBA(0,0,1,1);
         render(background);
 
-        Button button = new  Button(new Vector2f(35,33),new Vector2f(5,1));
+        Button button = new  Button(new Vector2f(35,31),new Vector2f(5,1));
         addButton(button);
-        render(Text.translatable("connect").setColor(0,1,0),35,33);
+        render(Text.translatable("connect").setColor(0,1,0),35,31);
 
         button.addListener(button1 -> {
             if(button1 != MouseButton.LMB)return;
@@ -35,5 +36,17 @@ public class ConnectGUI extends GUI {
             buf.writeString(nameField.getContent());
             Client.send2Server("connect",buf);
         });
+    }
+
+    public void connectedSuccessfully(){
+        Button button = new  Button(new Vector2f(35,29),new Vector2f(5,1));
+        addButton(button);
+        render(Text.translatable("connect_suc").setColor(0,1,0),35,29);
+    }
+
+    public void notConnected(){
+        Button button = new  Button(new Vector2f(35,29),new Vector2f(5,1));
+        addButton(button);
+        render(Text.translatable("connect_un").setColor(0,1,0),35,29);
     }
 }

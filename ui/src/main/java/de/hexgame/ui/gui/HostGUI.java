@@ -5,6 +5,7 @@ import de.igelstudios.igelengine.client.graphics.Polygon;
 import de.igelstudios.igelengine.client.graphics.Renderer;
 import de.igelstudios.igelengine.client.gui.*;
 import de.igelstudios.igelengine.client.lang.Text;
+import de.igelstudios.igelengine.common.networking.client.Client;
 import org.joml.Vector2f;
 
 public class HostGUI extends GUI {
@@ -24,7 +25,10 @@ public class HostGUI extends GUI {
 
         button.addListener(button1 -> {
             if(button1 != MouseButton.LMB)return;
-            HexServer server = new HexServer(Integer.parseInt(hostField.getContent()));
+            int port;
+            if(hostField.getLength() == 0)port = Client.DEFAULT_PORT;
+            else port = Integer.parseInt(hostField.getContent());
+            HexServer server = new HexServer(port);
             new PlayGUI(true,server);
         });
     }

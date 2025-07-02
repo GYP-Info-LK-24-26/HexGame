@@ -32,7 +32,8 @@ public class MainGUI extends GUI {
         addButton(quitBTN);
         render(Text.translatable("quit").setColor(0,1,0),35,27);
 
-        playBTN.addListener(e -> new PlayGUI(false,null));
+        playBTN.addListener(e ->
+                new PlayGUI(false,null));
         settingsBTN.addListener(e -> new SettingsGUI());
         quitBTN.addListener(e -> System.exit(0));
         connectBTN.addListener(e -> new ConnectGUI());

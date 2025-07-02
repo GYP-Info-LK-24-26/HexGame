@@ -14,6 +14,7 @@ public class RemotePlayer implements Player, ClientNet {
     private Position move;
     private UUID uuid;
     private String playerName;
+    private GameState gameState;
 
     @Override
     public String getName() {
@@ -25,9 +26,10 @@ public class RemotePlayer implements Player, ClientNet {
     }
 
     @Override
-    public Move think(GameState gameState) {
+    public synchronized Move think(GameState gameState) {
         moveStart = System.currentTimeMillis();
         moving = true;
+        this.gameState = gameState;
         try {
             wait();
         } catch (InterruptedException e) {
@@ -37,8 +39,10 @@ public class RemotePlayer implements Player, ClientNet {
         return new Move(move);
     }
 
-    public void makeMove(Position pos,long moveTime){
+    public synchronized void makeMove(Position pos,long moveTime){
         if(moveTime < moveStart)return;
+        if(!pos.isValid())return;
+        if(!gameState.isLegalMove(new Move(pos)))return;
         if(!moving)return;
         move = pos;
         notify();

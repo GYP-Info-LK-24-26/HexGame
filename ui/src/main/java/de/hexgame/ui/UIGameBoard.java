@@ -96,7 +96,7 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
             Renderer.get().render(topRight);
             Polygon corner = new Polygon(topLeft.getEndUp(),topRight.getStartUp(),topLeft.getEndOrg()).setRGBA(0,0,1,1);
             cornerList.add(corner);
-            Renderer.get().render(corner);
+            //Renderer.get().render(corner);
 
             Line baseCPY = topRight.cloneFromEnd(-90,length,0.25f, Line.Type.CENTER);
             lineList.add(baseCPY);
@@ -120,15 +120,15 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
 
         Polygon corn = new Polygon(lineList.get(0).getEndUp(),lineList.get(1).getStartUp(),lineList.get(0).getEndOrg()).setRGBA(1,0,0,1);
         cornerList.add(corn);
-        Renderer.get().render(corn);
+        //Renderer.get().render(corn);
         corn = new Polygon(lineList.get(0).getStartUp(),lineList.get(5).getEndUp(),lineList.get(0).getOrg()).setRGBA(1,0,0,1);
         cornerList.add(corn);
-        Renderer.get().render(corn);
+       //Renderer.get().render(corn);
 
         Line st = lineList.get(lineList.size() - 4);
         corn = new Polygon(lineList.get(lineList.size() - 3).getStartUp(),lineList.get(lineList.size() - 3).getOrg(),st.getEndUp()).setRGBA(1,0,0,1);
         cornerList.add(corn);
-        Renderer.get().render(corn);
+        //Renderer.get().render(corn);
 
         int currentID = 8;
         for (int i = 0; i < GameState.BOARD_SIZE - 1; i++) {
@@ -156,7 +156,7 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
 
                     Polygon corner = new Polygon(botLeft.getStartUp(),botRight.getEndUp(),botRight.getEndOrg()).setRGBA(0,0,1,1);
                     cornerList.add(corner);
-                    Renderer.get().render(corner);
+                    //Renderer.get().render(corner);
                 }
 
                 if(innerBase == null) {
@@ -167,7 +167,7 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
 
                     Polygon p = new Polygon(innerBase.getStartUp(),botLeft.getEndUp(),innerBase.getOrg()).setRGBA(1,0,0,1);
                     cornerList.add(p);
-                    Renderer.get().render(p);
+                    //Renderer.get().render(p);
                 }
 
                 //if(i >= 1 && j == 9) {
@@ -194,7 +194,7 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
 
             Polygon corner = new Polygon(topRight.getEndUp(),right.getStartUp(),right.getOrg()).setRGBA(1,0,0,1);
             cornerList.add(corner);
-            Renderer.get().render(corner);
+            //Renderer.get().render(corner);
 
             Line botRight = right.cloneFromEnd(-150, length, 0.25f, Line.Type.CENTER);
             lineList.add(botRight);
@@ -216,11 +216,11 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
 
                 Polygon botCorn = new Polygon(botLeft.getOrg(),botLeft.getStartUp(),botRight.getEndUp()).setRGBA(0,0,1,1);
                 cornerList.add(botCorn);
-                Renderer.get().render(botCorn);
+                //Renderer.get().render(botCorn);
 
                 Polygon rightCorn = new Polygon(right.getEndUp(),right.getEndOrg(),botRight.getStartUp()).setRGBA(1,0,0,1);
                 cornerList.add(rightCorn);
-                Renderer.get().render(rightCorn);
+                //Renderer.get().render(rightCorn);
             }
 
             Polygon p = Polygon.fromLines(topLeft,topRight,right,botRight,botLeft,innerBase).setRGBA(1,1,1,1);

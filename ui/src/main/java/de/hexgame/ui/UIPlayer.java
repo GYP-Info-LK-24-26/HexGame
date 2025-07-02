@@ -39,7 +39,6 @@ public class UIPlayer implements Player {
         if(nextMove == null)return Util.generateRandomMove(gameState);
         Move ret = nextMove;
         nextMove = null;
-        System.out.println(ClientMain.getInstance().getEngine().getFPS());
         return ret;
     }
 }

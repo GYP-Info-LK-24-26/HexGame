@@ -4,11 +4,14 @@ import de.hexgame.logic.Game;
 import de.hexgame.logic.Player;
 import de.hexgame.ui.UIGameBoard;
 import de.hexgame.ui.UIPlayer;
+import de.hexgame.ui.networking.BoardChangeListenerS2C;
+import de.hexgame.ui.networking.GameEndS2C;
 import de.hexgame.ui.networking.HexServer;
 import de.hexgame.ui.networking.RemotePlayer;
 import de.igelstudios.igelengine.client.graphics.Renderer;
 import de.igelstudios.igelengine.client.gui.*;
 import de.igelstudios.igelengine.client.lang.Text;
+import de.igelstudios.igelengine.common.networking.PacketByteBuf;
 import org.joml.Vector2f;
 
 import java.io.*;
@@ -88,9 +91,17 @@ public class PlayGUI extends GUI {
                     UIGameBoard.get().startRendering();
                     Game game = new Game(first, second);
                     game.getGameState().addPlayerMoveListener(UIGameBoard.get());
-                    game.addPlayerWinListener(WinGUI::new);
+                    if(withRemote){
+                        game.getGameState().addPlayerMoveListener(new BoardChangeListenerS2C());
+                        game.addPlayerWinListener(new GameEndS2C());
+                    }
+                    game.addPlayerWinListener(player -> new WinGUI(player.getName()));
                     UIGameBoard.setGameState(game.getGameState());
                     game.asThread().start();
+
+                    if(withRemote){
+                        HexServer.sendToEveryone("start",PacketByteBuf.create());
+                    }
                 } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                          NoSuchMethodException e) {
                     throw new RuntimeException(e);
