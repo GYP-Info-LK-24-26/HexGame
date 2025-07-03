@@ -57,13 +57,13 @@ public class Trainer implements Runnable {
             gameDataB.extractDataSets(winner == playerB, model, dataSets);
         });
 
-        int gameIndex;
-        while ((gameIndex = counter.incrementAndGet()) <= GAME_COUNT) {
+        int gameNumber;
+        while ((gameNumber = counter.incrementAndGet()) <= GAME_COUNT) {
             game.run();
             gameDataA.clear();
             gameDataB.clear();
             gameState.reset();
-            log.info("Game {} has finished.", gameIndex);
+            log.info("Game {} has finished.", gameNumber);
         }
     }
 }

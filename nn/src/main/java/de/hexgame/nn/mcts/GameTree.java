@@ -2,26 +2,33 @@ package de.hexgame.nn.mcts;
 
 import de.hexgame.logic.GameState;
 import de.hexgame.nn.Model;
-import org.nd4j.linalg.api.ndarray.INDArray;
+import lombok.Getter;
 
-import static de.hexgame.logic.GameState.BOARD_SIZE;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class GameTree {
     private TreeNode root;
+    @Getter
+    private final ExecutorService dispatcher = Executors.newSingleThreadExecutor();
 
     public GameTree(GameState gameState) {
-        root = new TreeNode(null, gameState, 0.0f);
+        root = new TreeNode(null, null, gameState);
     }
 
     public void jumpTo(GameState gameState) {
         root = root.jumpTo(gameState);
-        if (root == null) {
-            root = new TreeNode(null, gameState, 0.0f);
+        if (root != null) {
+            root.addDirichletNoise();
+        } else {
+            root = new TreeNode(null, null, gameState);
         }
     }
 
-    public void expand(Model model) {
-        root.expand(model);
+    public CompletableFuture<Void> expand(Model model, Executor dispatcher, boolean addNoise) {
+        return root.expand(model, dispatcher, addNoise);
     }
 
     public Model.Output getCombinedOutput() {

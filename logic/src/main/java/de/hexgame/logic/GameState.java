@@ -48,6 +48,10 @@ public class GameState implements Cloneable {
         return pieces[position.getIndex()];
     }
 
+    public Piece getPiece(int index) {
+        return pieces[index];
+    }
+
     /**
      * is O(n²) complexity
      * @return all moves that can be made
@@ -206,5 +210,20 @@ public class GameState implements Cloneable {
         } catch (CloneNotSupportedException e) {
             throw new AssertionError();
         }
+    }
+
+    public long hashCodeLong() {
+        long h = 1;
+        for (Piece p : pieces) {
+            long code;
+            if (p == null) {
+                code = 0;
+            } else {
+                code = (p.getColor() == Piece.Color.RED) ? 1 : 2;
+            }
+            h = 31 * h + code;
+        }
+        h = 31 * h + (halfMoveCounter == 1 ? 1 : 0);
+        return Long.reverse(h);
     }
 }
