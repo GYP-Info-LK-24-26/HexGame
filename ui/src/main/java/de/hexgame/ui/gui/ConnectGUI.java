@@ -6,24 +6,47 @@ import de.igelstudios.igelengine.client.graphics.Polygon;
 import de.igelstudios.igelengine.client.graphics.Renderer;
 import de.igelstudios.igelengine.client.gui.*;
 import de.igelstudios.igelengine.client.lang.Text;
+import de.igelstudios.igelengine.common.networking.PacketByteBuf;
+import de.igelstudios.igelengine.common.networking.client.Client;
 import org.joml.Vector2f;
 
 public class ConnectGUI extends GUI {
 
     public ConnectGUI() {
+        //Renderer.get().clear();
         GUIManager.setGUI(this);
         TextField hostField = new TextField(new Vector2f(35,35),new Vector2f(10,1));
         addTextField(hostField);
         Polygon polygon = new Polygon(new Vector2f(35,35),new Vector2f(45,35),new Vector2f(45,36),new Vector2f(35,36)).setRGBA(0,0,1,1);
-        Renderer.get().render(polygon);
+        render(polygon);
 
-        Button button = new  Button(new Vector2f(35,33),new Vector2f(5,1));
+        TextField nameField = new TextField(new Vector2f(35,33),new Vector2f(10,1));
+        addTextField(nameField);
+        Polygon background = new Polygon(new Vector2f(35,33),new Vector2f(45,33),new Vector2f(45,34),new Vector2f(35,34)).setRGBA(0,0,1,1);
+        render(background);
+
+        Button button = new  Button(new Vector2f(35,31),new Vector2f(5,1));
         addButton(button);
-        Renderer.get().render(Text.translatable("connect").setColor(0,1,0),35,33);
+        render(Text.translatable("connect").setColor(0,1,0),35,31);
 
         button.addListener(button1 -> {
             if(button1 != MouseButton.LMB)return;
             new HexClient(hostField.getContent());
+            PacketByteBuf buf = PacketByteBuf.create();
+            buf.writeString(nameField.getContent());
+            Client.send2Server("connect",buf);
         });
+    }
+
+    public void connectedSuccessfully(){
+        Button button = new  Button(new Vector2f(35,29),new Vector2f(5,1));
+        addButton(button);
+        render(Text.translatable("connect_suc").setColor(0,1,0),35,29);
+    }
+
+    public void notConnected(){
+        Button button = new  Button(new Vector2f(35,29),new Vector2f(5,1));
+        addButton(button);
+        render(Text.translatable("connect_un").setColor(0,1,0),35,29);
     }
 }

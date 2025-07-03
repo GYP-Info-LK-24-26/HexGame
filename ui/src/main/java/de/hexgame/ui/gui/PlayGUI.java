@@ -4,9 +4,14 @@ import de.hexgame.logic.Game;
 import de.hexgame.logic.Player;
 import de.hexgame.ui.UIGameBoard;
 import de.hexgame.ui.UIPlayer;
+import de.hexgame.ui.networking.BoardChangeListenerS2C;
+import de.hexgame.ui.networking.GameEndS2C;
+import de.hexgame.ui.networking.HexServer;
+import de.hexgame.ui.networking.RemotePlayer;
 import de.igelstudios.igelengine.client.graphics.Renderer;
 import de.igelstudios.igelengine.client.gui.*;
 import de.igelstudios.igelengine.client.lang.Text;
+import de.igelstudios.igelengine.common.networking.PacketByteBuf;
 import org.joml.Vector2f;
 
 import java.io.*;
@@ -21,12 +26,14 @@ public class PlayGUI extends GUI {
     private List<Text> secondTexts;
     private int firstID = -1;
     private int secondID = -1;
-    public PlayGUI() {
+    public PlayGUI(boolean withRemote,HexServer server) {
         GUIManager.setGUI(this);
         try(InputStream stream = this.getClass().getClassLoader().getResourceAsStream("playerClasses.txt")) {
             BufferedReader reader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(stream)));
             List<String> playerNames = reader.lines().toList();
             playerList = new ArrayList<>();
+            if(withRemote) playerList.add(RemotePlayer.class);
+
             for (String playerName : playerNames) {
                 try {
                     Class<?> clazz = null;
@@ -58,8 +65,25 @@ public class PlayGUI extends GUI {
             public void clicked(MouseButton button) {
                 try {
                     GUIManager.removeGui();
-                    Player first = playerList.get(firstID).getConstructor().newInstance();
-                    Player second = playerList.get(secondID).getConstructor().newInstance();
+                    Player first;
+                    Player second;
+                    if(withRemote){
+                        int i = 0;
+                        if(firstID == 0) {
+                            first = server.getPlayerList().get(i);
+                            i++;
+                        }else{
+                            first = playerList.get(firstID).getConstructor().newInstance();
+                        }
+                        if(secondID == 0){
+                            second = server.getPlayerList().get(i);
+                        }else {
+                            second = playerList.get(secondID).getConstructor().newInstance();
+                        }
+                    }else{
+                        first = playerList.get(firstID).getConstructor().newInstance();
+                        second = playerList.get(secondID).getConstructor().newInstance();
+                    }
                     //if(first instanceof UIPlayer && second instanceof UIPlayer)return;
                     if(first instanceof UIPlayer)UIGameBoard.addPlayer((UIPlayer) first);
                     if(second instanceof UIPlayer)UIGameBoard.addPlayer((UIPlayer) second);
@@ -67,10 +91,17 @@ public class PlayGUI extends GUI {
                     UIGameBoard.get().startRendering();
                     Game game = new Game(first, second);
                     game.getGameState().addPlayerMoveListener(UIGameBoard.get());
-                    game.addPlayerWinListener(WinGUI::new);
+                    if(withRemote){
+                        game.getGameState().addPlayerMoveListener(new BoardChangeListenerS2C());
+                        game.addPlayerWinListener(new GameEndS2C());
+                    }
+                    game.addPlayerWinListener(player -> new WinGUI(player.getName()));
                     UIGameBoard.setGameState(game.getGameState());
                     game.asThread().start();
 
+                    if(withRemote){
+                        HexServer.sendToEveryone("start",PacketByteBuf.create());
+                    }
                 } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                          NoSuchMethodException e) {
                     throw new RuntimeException(e);
