@@ -64,12 +64,13 @@ public class PlayGUI extends GUI {
                     if(first instanceof UIPlayer)UIGameBoard.addPlayer((UIPlayer) first);
                     if(second instanceof UIPlayer)UIGameBoard.addPlayer((UIPlayer) second);
                     //Renderer.get().clear();
+                    UIGameBoard.get().startRendering();
                     Game game = new Game(first, second);
                     game.getGameState().addPlayerMoveListener(UIGameBoard.get());
                     game.addPlayerWinListener(WinGUI::new);
                     UIGameBoard.setGameState(game.getGameState());
                     game.asThread().start();
-                    UIGameBoard.get().startRendering();
+
                 } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                          NoSuchMethodException e) {
                     throw new RuntimeException(e);
