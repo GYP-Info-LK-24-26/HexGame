@@ -39,4 +39,12 @@ public class MainGUI extends GUI {
         connectBTN.addListener(e -> new ConnectGUI());
         hostBTN.addListener(e -> new HostGUI());
     }
+
+    public void disconnected() {
+        render(Text.translatable("con_interrupted").setColor(0,1,0),35,37);
+    }
+
+    public void playerDisconnect() {
+        render(Text.translatable("player_disCon").setColor(0,1,0),35,37);
+    }
 }

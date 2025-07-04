@@ -4,6 +4,7 @@ import de.hexgame.logic.Game;
 import de.hexgame.logic.RandomPlayer;
 import de.hexgame.ui.gui.MainGUI;
 import de.igelstudios.igelengine.client.graphics.Renderer;
+import de.igelstudios.igelengine.client.gui.GUIManager;
 import de.igelstudios.igelengine.client.keys.*;
 import de.igelstudios.igelengine.common.startup.EngineInitializer;
 import de.igelstudios.igelengine.common.startup.KeyInitializer;
@@ -41,6 +42,8 @@ public class Initializer implements EngineInitializer,KeyListener {
 
     @KeyHandler("esc")
     public void onKeyPressed(boolean pressed) {
-        if(pressed)new MainGUI();
+        if(!pressed)return;
+        if(UIGameBoard.get().isRunning())UIGameBoard.get().forceEnd();
+        if(!(GUIManager.getGui() instanceof MainGUI)) new MainGUI();
     }
 }

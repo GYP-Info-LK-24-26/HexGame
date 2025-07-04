@@ -1,5 +1,7 @@
 package de.hexgame.ui.networking;
 
+import de.hexgame.ui.UIGameBoard;
+import de.hexgame.ui.gui.MainGUI;
 import de.igelstudios.ClientMain;
 import de.igelstudios.igelengine.common.networking.ErrorHandler;
 import de.igelstudios.igelengine.common.networking.PacketByteBuf;
@@ -15,6 +17,7 @@ public class HexServer implements ConnectionListener {
     private Map<UUID, ClientNet> players;
     private ArrayList<RemotePlayer> player;
     private static HexServer instance;
+    private List<RemotePlayer> relevantPlayers;
 
     public static void register(){
         Server.registerClient2ServerHandler("makeMove", MakeMoveRecieverC2S::recieve);
@@ -33,12 +36,18 @@ public class HexServer implements ConnectionListener {
         });
         server.start();
         player = new ArrayList<>();
+        relevantPlayers = new ArrayList<>();
 
         ClientMain.getInstance().getEngine().addTickable(server);
 
         //init code for other classes
         PlayerFactory.setPlayerClass(RemotePlayer.class,true);
         register();
+    }
+
+    public static void forceStop() {
+        stop();
+        UIGameBoard.get().endGame();
     }
 
     @Override
@@ -49,6 +58,11 @@ public class HexServer implements ConnectionListener {
     @Override
     public void playerDisConnect(ClientNet player) {
         this.player.remove((RemotePlayer) player);
+
+        if(relevantPlayers.contains(player)) {
+            forceStop();
+            new MainGUI().playerDisconnect();
+        }
     }
 
     public ArrayList<RemotePlayer> getPlayerList() {
@@ -66,5 +80,9 @@ public class HexServer implements ConnectionListener {
         for (RemotePlayer remotePlayer : instance.player) {
             Server.send2Client(remotePlayer,type,packetByteBuf);
         }
+    }
+
+    public static void addRelevantPlayer(RemotePlayer remotePlayer){
+        instance.relevantPlayers.add(remotePlayer);
     }
 }
