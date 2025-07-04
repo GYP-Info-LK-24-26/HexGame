@@ -16,4 +16,30 @@ public enum Direction {
     public static final Direction[] ALL = Direction.values();
 
     private final int deltaRow, deltaColumn;
+
+    public Direction changeDirection() {
+        if (deltaRow == -1) {
+            if (deltaColumn == 0) {
+                return DOWN_RIGHT;
+            }
+            else {
+                return DOWN_LEFT;
+            }
+        } else if (deltaRow == 0) {
+            if (deltaColumn == -1) {
+                return RIGHT;
+            }
+            else {
+                return LEFT;
+            }
+        }
+        else {
+            if (deltaColumn == -1) {
+                return UP_RIGHT;
+            }
+            else {
+                return UP_LEFT;
+            }
+        }
+    }
 }

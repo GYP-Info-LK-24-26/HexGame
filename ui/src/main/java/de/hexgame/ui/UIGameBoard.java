@@ -28,7 +28,7 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
     private List<Polygon> cornerList;
     private List<Polygon> hexagonList;
     //this is the time that has pass between turn to avoid graphical overloading
-    private static final int MIN_TIME_PER_TURN = 100;
+    private static final int MIN_TIME_PER_TURN = 1;
     //this keeps track of the last time a move was made so that the minimum time can be enforced
     private long last_time_run = 0;
     private List<UIPlayer> playerList;
@@ -274,9 +274,13 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
                 throw new RuntimeException(e);
             }
         }
+        System.out.println(hexagonList.size());
         Polygon hex = hexagonList.get(move.getIndex());
-        if(gameState.getPiece(move).getColor() == Piece.Color.RED)hex.setRGBA(1,0,0,1);
-        else hex.setRGBA(0,0,1,1);
+        if(gameState.getPiece(move) != null) {
+            if (gameState.getPiece(move).getColor() == Piece.Color.RED)
+                hex.setRGBA(1, 0, 0, 1);
+            else hex.setRGBA(0, 0, 1, 1);
+        }
         //Renderer.get().render(hex);
         //SceneObject obj = new SceneObject().setTex(TexturePool.getID(gameState.getPiece(move).getColor() == Piece.Color.RED? "red_hex.png":"blue_hex.png")).setSize(uniformSize);
         //if(gameState.getPiece(move).getColor() == Piece.Color.RED){

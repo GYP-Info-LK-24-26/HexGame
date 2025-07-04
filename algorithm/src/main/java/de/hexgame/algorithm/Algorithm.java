@@ -2,19 +2,30 @@ package de.hexgame.algorithm;
 
 import de.hexgame.logic.*;
 import de.hexgame.logic.GameState;
+import lombok.Setter;
 
 import java.util.List;
 
-public class Algorithm extends Thread{
+public class Algorithm{
 
     private final int board;
-
+    @Setter
+    private GameState gameState;
+    private boolean[] isVisited;
 
     public Algorithm() {
         board = GameState.BOARD_SIZE;
+        isVisited = new boolean[121];
+        clear();
     }
 
-    public double calculateRating(Position position, Piece.Color usedColor, GameState gameState) {
+    public void clear() {
+        for (int i = 0; i < 121; i++) {
+            isVisited[i] = false;
+        }
+    }
+
+    public double calculateRating(Position position, Piece.Color usedColor) {
         double tempRating = 0;
 
         if (!position.isValid()) {
@@ -28,16 +39,16 @@ public class Algorithm extends Thread{
         } else if (tempPiece.getColor().equals(usedColor)) {
             gameState.update(position);
             if (tempPiece.isConnectedHigh() || tempPiece.isConnectedLow()) {
-                tempRating = tempRating + 20;
+                tempRating = tempRating + 15;
             } else {
-                tempRating = tempRating + 10;
+                tempRating = tempRating + 5;
             }
         } else {
             gameState.update(position);
             if (tempPiece.isConnectedHigh() || tempPiece.isConnectedLow()) {
-                tempRating = tempRating + 15;
+                tempRating = tempRating + 10;
             } else {
-                tempRating = tempRating - 5;
+                tempRating = tempRating - 1;
             }
         }
 
@@ -45,13 +56,13 @@ public class Algorithm extends Thread{
         return tempRating;
     }
 
-    public double calculatePieceRating(Position position, Piece.Color usedColor, GameState gameState) {
+    public double calculatePieceRating(Position position, Piece.Color usedColor) {
         double rating = 0;
         Position tempPosition;
 
         for (Direction direction: Direction.ALL) {
             tempPosition = position.add(direction);
-            rating = rating + calculateRating(tempPosition, usedColor, gameState);
+            rating = rating + calculateRating(tempPosition, usedColor);
         }
 
         if (gameState.getSideToMove().equals(Piece.Color.RED)) {
@@ -67,7 +78,24 @@ public class Algorithm extends Thread{
         return rating;
     }
 
-    public Position bestPosition(GameState gameState) {
+    public double countRow(Position position, GameState cGameState) {
+        int counter = 3;
+        isVisited[position.getIndex()] = true;
+        for (Direction direction1 : Direction.ALL) {
+            if (!position.add(direction1).isValid()
+                    || cGameState.getPiece(position.add(direction1)) == null) {
+                continue;
+            }
+            if (cGameState.getPiece(position.add(direction1)).getColor() == cGameState.getSideToMove()
+                    || isVisited[position.add(direction1).getIndex()]) {
+                continue;
+            }
+            counter = counter + (int) countRow(position.add(direction1), cGameState);
+        }
+        return counter;
+    }
+
+    public Position bestPosition() {
         Position bestPosition = null;
         double bestRating = Double.NEGATIVE_INFINITY;
         double calcRating;
@@ -76,7 +104,7 @@ public class Algorithm extends Thread{
 
         for (Move move: legalMoves) {
             Position position = new Position(move.getIndex());
-            calcRating = calculatePieceRating(position, gameState.getSideToMove(), gameState);
+            calcRating = calculatePieceRating(position, gameState.getSideToMove());
 
             //Checking if possible position is better than the best position
             if (calcRating > bestRating) {
@@ -87,7 +115,7 @@ public class Algorithm extends Thread{
         return bestPosition;
     }
 
-    public Position bestPositionIn2(GameState gameState) {
+    public Position bestPositionIn2() {
         Position bestPostion = null, tempPosition, tempOtherColorPosition, tempDirectionPosition, tempOtherColorDirectionPosition, tempSameColorPosition;
         Piece dummyPiece, dummyOtherColorPiece;
         double bestRating = Double.NEGATIVE_INFINITY;
@@ -114,7 +142,7 @@ public class Algorithm extends Thread{
 
             for (Direction direction : Direction.ALL) {
                 tempDirectionPosition = tempPosition.add(direction);
-                tempRating = tempRating + calculateRating(tempDirectionPosition, usedColor, CGameState);
+                tempRating = tempRating + calculateRating(tempDirectionPosition, usedColor);
                 if (!tempDirectionPosition.isValid() || CGameState.getPiece(tempDirectionPosition) == null) {
                     continue;
                 }
@@ -137,7 +165,7 @@ public class Algorithm extends Thread{
 
                 for (Direction otherColorDirection : Direction.ALL) {
                     tempOtherColorDirectionPosition = tempOtherColorPosition.add(otherColorDirection);
-                    tempOtherColorRating = tempOtherColorRating + calculateRating(tempOtherColorDirectionPosition, otherColor, CGameState);
+                    tempOtherColorRating = tempOtherColorRating + calculateRating(tempOtherColorDirectionPosition, otherColor);
                     if (!tempOtherColorDirectionPosition.isValid() || CGameState.getPiece(tempOtherColorDirectionPosition) == null) {
                         continue;
                     }
@@ -156,7 +184,7 @@ public class Algorithm extends Thread{
                     }
                     tempSameColorPosition = new Position(move2.targetHexagon().getIndex());
 
-                    tempSameColorRating = calculatePieceRating(tempSameColorPosition, usedColor, CGameState);
+                    tempSameColorRating = calculatePieceRating(tempSameColorPosition, usedColor);
                 }
             }
             tempRating = tempRating - (tempOtherColorRating / counterFreePieces) + (tempSameColorRating / (counterFreePiecesSameColor * counterFreePieces));
@@ -170,7 +198,7 @@ public class Algorithm extends Thread{
         return bestPostion;
     }
 
-    public Position bestPositionIn2AndAHalf(GameState gameState) {
+    public Position bestPositionIn2AndAHalf() {
         Position bestPosition = null, tempPosition, tempDirectionPosition, tempOtherColorPosition, tempOtherColorDirectionPosition, tempSameColorPosition, tempSameColorDirectionPosition, tempOtherColorPosition2;
         Piece dummyPiece, dummyOtherColorPiece, dummySameColorPiece;
         double bestRating = Double.NEGATIVE_INFINITY;
@@ -197,7 +225,7 @@ public class Algorithm extends Thread{
 
             for (Direction direction : Direction.ALL) {
                 tempDirectionPosition = tempPosition.add(direction);
-                tempRating = tempRating + calculateRating(tempDirectionPosition, usedColor, CGameState);
+                tempRating = tempRating + calculateRating(tempDirectionPosition, usedColor);
                 if (!tempDirectionPosition.isValid() || CGameState.getPiece(tempDirectionPosition) == null) {
                     continue;
                 }
@@ -219,7 +247,7 @@ public class Algorithm extends Thread{
 
                 for (Direction direction : Direction.ALL) {
                     tempOtherColorDirectionPosition = tempOtherColorPosition.add(direction);
-                    tempOtherColorRating = tempOtherColorRating + calculateRating(tempOtherColorDirectionPosition, otherColor, CGameState);
+                    tempOtherColorRating = tempOtherColorRating + calculateRating(tempOtherColorDirectionPosition, otherColor);
                     if (!tempOtherColorDirectionPosition.isValid() || CGameState.getPiece(tempOtherColorDirectionPosition) == null) {
                         continue;
                     }
@@ -241,7 +269,7 @@ public class Algorithm extends Thread{
 
                     for (Direction direction : Direction.ALL) {
                         tempSameColorDirectionPosition = tempSameColorPosition.add(direction);
-                        tempSameColorRating = tempSameColorRating + calculateRating(tempSameColorDirectionPosition, usedColor, CGameState);
+                        tempSameColorRating = tempSameColorRating + calculateRating(tempSameColorDirectionPosition, usedColor);
                         if (!tempSameColorDirectionPosition.isValid() || CGameState.getPiece(tempSameColorDirectionPosition) == null) {
                             continue;
                         }
@@ -259,7 +287,7 @@ public class Algorithm extends Thread{
                             continue;
                         }
                         tempOtherColorPosition2 = new Position(move3.getIndex());
-                        tempOtherColorRating2 = tempOtherColorRating2 + calculatePieceRating(tempOtherColorPosition2, otherColor, CGameState);
+                        tempOtherColorRating2 = tempOtherColorRating2 + calculatePieceRating(tempOtherColorPosition2, otherColor);
                     }
                 }
             }
@@ -273,7 +301,7 @@ public class Algorithm extends Thread{
         return bestPosition;
     }
 
-    public Position bestPositionIn3(GameState gameState) {
+    public Position bestPositionIn3() {
         Position bestPostion = null, tempPosition, tempDirectionPosition, tempOtherColorPosition, tempOtherColorDirectionPosition, tempSameColorPosition, tempSameColorDirectionPosition, tempOtherColorPosition2, tempOtherColorDirectionPosition2, tempSameColorPosition2;
         Piece dummyPiece, dummyOtherColorPiece, dummySameColorPiece, dummyOtherColorPiece2;
         double bestRating = Double.NEGATIVE_INFINITY;
@@ -302,7 +330,7 @@ public class Algorithm extends Thread{
 
             for (Direction direction : Direction.ALL) {
                 tempDirectionPosition = tempPosition.add(direction);
-                tempRating = tempRating + calculateRating(tempDirectionPosition, usedColor, CGameState);
+                tempRating = tempRating + calculateRating(tempDirectionPosition, usedColor);
                 if (!tempDirectionPosition.isValid() || CGameState.getPiece(tempDirectionPosition) == null) {
                     continue;
                 }
@@ -324,7 +352,7 @@ public class Algorithm extends Thread{
 
                 for (Direction direction : Direction.ALL) {
                     tempOtherColorDirectionPosition = tempOtherColorPosition.add(direction);
-                    tempOtherColorRating = tempOtherColorRating + calculateRating(tempOtherColorDirectionPosition, otherColor, CGameState);
+                    tempOtherColorRating = tempOtherColorRating + calculateRating(tempOtherColorDirectionPosition, otherColor);
                     if (!tempOtherColorDirectionPosition.isValid() || CGameState.getPiece(tempOtherColorDirectionPosition) == null) {
                         continue;
                     }
@@ -346,7 +374,7 @@ public class Algorithm extends Thread{
 
                     for (Direction direction : Direction.ALL) {
                         tempSameColorDirectionPosition = tempSameColorPosition.add(direction);
-                        tempSameColorRating = tempSameColorRating + calculateRating(tempSameColorDirectionPosition, usedColor, CGameState);
+                        tempSameColorRating = tempSameColorRating + calculateRating(tempSameColorDirectionPosition, usedColor);
                         if (!tempSameColorDirectionPosition.isValid() || CGameState.getPiece(tempSameColorDirectionPosition) == null) {
                             continue;
                         }
@@ -368,7 +396,7 @@ public class Algorithm extends Thread{
 
                         for (Direction direction : Direction.ALL) {
                             tempOtherColorDirectionPosition2 = tempOtherColorPosition2.add(direction);
-                            tempOtherColorRating2 = tempOtherColorRating2 + calculateRating(tempOtherColorDirectionPosition2, otherColor, CGameState);
+                            tempOtherColorRating2 = tempOtherColorRating2 + calculateRating(tempOtherColorDirectionPosition2, otherColor);
                             if (!tempOtherColorDirectionPosition2.isValid() || CGameState.getPiece(tempOtherColorDirectionPosition2) == null) {
                                 continue;
                             }
@@ -386,7 +414,7 @@ public class Algorithm extends Thread{
                                 continue;
                             }
                             tempSameColorPosition2 = new Position(move4.getIndex());
-                            tempSameColorRating2 = tempOtherColorRating2 + calculatePieceRating(tempSameColorPosition2, usedColor, CGameState);
+                            tempSameColorRating2 = tempOtherColorRating2 + calculatePieceRating(tempSameColorPosition2, usedColor);
                         }
                     }
                 }
@@ -401,13 +429,13 @@ public class Algorithm extends Thread{
         return bestPostion;
     }
 
-    public Position betterAlgorithm(GameState gameState) {
+    public Position betterAlgorithm() {
         GameState cGameState = gameState.clone();
         Position bestPosition = null;
         Piece.Color usedColor = cGameState.getSideToMove();
         Piece.Color otherColor;
         double bestRating = Double.NEGATIVE_INFINITY;
-        double tempRating = 0.0;
+        double tempRating;
         Piece tempPiece;
 
         if (usedColor == Piece.Color.RED) otherColor = Piece.Color.BLUE;
@@ -416,26 +444,31 @@ public class Algorithm extends Thread{
         for (Move move: cGameState.getLegalMoves()) {
             boolean tempHighConnect = false, tempLowConnect = false;
             if (cGameState.getPiece(move.targetHexagon()) == null && move.targetHexagon().isValid()) {
-                cGameState.setPiece(move.targetHexagon(), new Piece(usedColor));
-                cGameState.update(move.targetHexagon());
-                tempPiece = cGameState.getPiece(move.targetHexagon());
-                if (tempPiece.isConnectedHigh() && tempPiece.isConnectedLow()) {
+                cGameState.makeMove(move);
+                if (cGameState.isFinished()) {
                     return move.targetHexagon();
                 }
                 for (Direction direction: Direction.ALL) {
                     if (move.targetHexagon().add(direction).isValid() && cGameState.getPiece(move.targetHexagon().add(direction)) != null && cGameState.getPiece(move.targetHexagon().add(direction)).getColor() == otherColor) {
-                        if (cGameState.getPiece(move.targetHexagon().add(direction)).isConnectedHigh()) {
+                        tempPiece = cGameState.getPiece(move.targetHexagon().add(direction));
+                        if (tempPiece.isConnectedHigh()) {
                             tempHighConnect = true;
                         }
-                        if (cGameState.getPiece(move.targetHexagon().add(direction)).isConnectedLow()) {
+                        if (tempPiece.isConnectedLow()) {
                             tempLowConnect = true;
                         }
-                        cGameState.reset();
-                        cGameState = gameState.clone();
-                        cGameState.setPiece(move.targetHexagon(), new Piece(otherColor));
-                        cGameState.update(move.targetHexagon());
                         if (cGameState.isFinished()) {
                             return move.targetHexagon();
+                        }
+                        if (otherColor == Piece.Color.RED) {
+                            if (tempPiece.isConnectedHigh() && move.targetHexagon().column() == 0 && move.targetHexagon().row() == move.targetHexagon().add(direction).row() || tempPiece.isConnectedLow() && move.targetHexagon().column() == board - 1 && move.targetHexagon().row() == move.targetHexagon().add(direction).row()) {
+                                return move.targetHexagon();
+                            }
+                        }
+                        else {
+                            if (tempPiece.isConnectedHigh() && move.targetHexagon().row() == 0 && move.targetHexagon().column() == move.targetHexagon().add(direction).column() || tempPiece.isConnectedLow() && move.targetHexagon().row() == board - 1 && move.targetHexagon().column() == move.targetHexagon().add(direction).column()) {
+                                return move.targetHexagon();
+                            }
                         }
                     }
                 }
@@ -443,7 +476,7 @@ public class Algorithm extends Thread{
                     return move.targetHexagon();
                 }
             }
-            tempRating = calculatePieceRating(move.targetHexagon(), usedColor, cGameState);
+            tempRating = calculatePieceRating(move.targetHexagon(), usedColor);
 
             if (tempRating > bestRating) {
                 bestRating = tempRating;
@@ -453,7 +486,7 @@ public class Algorithm extends Thread{
         return bestPosition;
     }
 
-    public Position betterAlgorithmIn2(GameState gameState) {
+    public Position betterAlgorithmIn2() {
         Position bestPostion = null, tempPosition, tempOtherColorPosition, tempDirectionPosition, tempOtherColorDirectionPosition, tempSameColorPosition;
         Piece dummyPiece, dummyOtherColorPiece;
         double bestRating = Double.NEGATIVE_INFINITY;
@@ -461,10 +494,10 @@ public class Algorithm extends Thread{
         double tempOtherColorRating = 0;
         double tempSameColorRating = 0;
         int counterFreePieces = board * board;
-        int counterFreePiecesSameColor = board * board;
-        GameState cGameState = gameState.clone();
+        double counterFreePiecesSameColor = board * board;
+        GameState cGameState;
         Piece.Color otherColor;
-        Piece.Color usedColor = cGameState.getSideToMove();
+        Piece.Color usedColor = gameState.getSideToMove();
 
         if (usedColor == Piece.Color.BLUE) {
             otherColor = Piece.Color.RED;
@@ -472,13 +505,11 @@ public class Algorithm extends Thread{
             otherColor = Piece.Color.BLUE;
         }
 
-        for (Move move: cGameState.getLegalMoves()) {
+        for (Move move : gameState.getLegalMoves()) {
+            cGameState = gameState.clone();
             boolean tempHighConnect = false, tempLowConnect = false;
-            tempPosition = new Position(move.targetHexagon().getIndex());
-            if (cGameState.getPiece(tempPosition) == null)  {
-                cGameState.setPiece(tempPosition, new Piece(usedColor));
-                cGameState.update(tempPosition);
-            }
+            tempPosition = new Position(move.getIndex());
+            cGameState.makeMove(move);
             dummyPiece = cGameState.getPiece(tempPosition);
 
             if (dummyPiece.isConnectedLow() && dummyPiece.isConnectedHigh()) {
@@ -496,8 +527,20 @@ public class Algorithm extends Thread{
                         tempLowConnect = true;
                     }
                 }
-
-                tempRating = tempRating + calculateRating(tempDirectionPosition, usedColor, cGameState);
+                if (cGameState.isFinished()) {
+                    return move.targetHexagon();
+                }
+                if (otherColor == Piece.Color.RED) {
+                    if (dummyPiece.isConnectedHigh() && move.targetHexagon().column() == 0 && move.targetHexagon().row() == move.targetHexagon().add(direction).row() || dummyPiece.isConnectedLow() && move.targetHexagon().column() == board - 1 && move.targetHexagon().row() == move.targetHexagon().add(direction).row()) {
+                        return move.targetHexagon();
+                    }
+                }
+                else {
+                    if (dummyPiece.isConnectedHigh() && move.targetHexagon().row() == 0 && move.targetHexagon().column() == move.targetHexagon().add(direction).column() || dummyPiece.isConnectedLow() && move.targetHexagon().row() == board - 1 && move.targetHexagon().column() == move.targetHexagon().add(direction).column()) {
+                        return move.targetHexagon();
+                    }
+                }
+                tempRating = tempRating + calculateRating(tempDirectionPosition, usedColor);
             }
 
             if (tempHighConnect && tempLowConnect) {
@@ -511,30 +554,33 @@ public class Algorithm extends Thread{
                     continue;
                 }
                 tempOtherColorPosition = new Position(move1.targetHexagon().getIndex());
-                dummyOtherColorPiece = new Piece(otherColor);
+                cGameState.makeMove(move1);
+                if (cGameState.isFinished()) {
+                    return move.targetHexagon();
+                }
 
                 for (Direction otherColorDirection : Direction.ALL) {
                     tempOtherColorDirectionPosition = tempOtherColorPosition.add(otherColorDirection);
-                    tempOtherColorRating = tempOtherColorRating + calculateRating(tempOtherColorDirectionPosition, otherColor, cGameState);
+                    tempOtherColorRating = tempOtherColorRating + calculateRating(tempOtherColorDirectionPosition, otherColor);
                     if (!tempOtherColorDirectionPosition.isValid() || cGameState.getPiece(tempOtherColorDirectionPosition) == null) {
                         continue;
                     }
                     if (cGameState.getPiece(tempOtherColorDirectionPosition).isConnectedLow()) {
-                        dummyOtherColorPiece.setConnectedLow(true);
+                        cGameState.getPiece(tempOtherColorDirectionPosition).setConnectedLow(true);
                     }
                     if (cGameState.getPiece(tempOtherColorDirectionPosition).isConnectedHigh()) {
-                        dummyOtherColorPiece.setConnectedHigh(true);
+                        cGameState.getPiece(tempOtherColorDirectionPosition).setConnectedHigh(true);
                     }
                 }
 
                 for (Move move2: cGameState.getLegalMoves()) {
                     if (move2.targetHexagon().getIndex() == tempPosition.getIndex() || move2.targetHexagon().getIndex() == tempOtherColorPosition.getIndex()) {
-                        counterFreePiecesSameColor--;
+                        counterFreePiecesSameColor = counterFreePiecesSameColor - (1 / (double) (board * board));
                         continue;
                     }
                     tempSameColorPosition = new Position(move2.targetHexagon().getIndex());
 
-                    tempSameColorRating = calculatePieceRating(tempSameColorPosition, usedColor, cGameState);
+                    tempSameColorRating = calculatePieceRating(tempSameColorPosition, usedColor);
                 }
             }
             tempRating = tempRating - (tempOtherColorRating / counterFreePieces) + (tempSameColorRating / (counterFreePiecesSameColor * counterFreePieces));
@@ -546,5 +592,79 @@ public class Algorithm extends Thread{
         }
 
         return bestPostion;
+    }
+
+    public Position longRowAlgorithm() {
+        GameState cGameState = gameState.clone();
+        Position bestPostition = null;
+        Position tempPosition;
+        Piece.Color usedColor = cGameState.getSideToMove();
+        Piece.Color otherColor;
+        Piece tempPiece;
+        Move move;
+        double bestLength = 0;
+        double tempLength = 0;
+
+        if (usedColor == Piece.Color.RED) {otherColor = Piece.Color.BLUE;}
+        else {otherColor = Piece.Color.RED;}
+
+        for (int i = 0; i < 121; i++) {
+            cGameState = gameState.clone();
+            boolean tempHighConnect = false, tempLowConnect = false;
+            tempPosition = new Position(i);
+            move = new Move(tempPosition);
+            if (cGameState.getPiece(move.targetHexagon()) == null) {
+                cGameState.switchSideToMove();
+                cGameState.makeMove(move);
+                cGameState.update(move.targetHexagon());
+                if (cGameState.isFinished()) {
+                    return move.targetHexagon();
+                }
+                for (Direction direction: Direction.ALL) {
+                    if (move.targetHexagon().add(direction).isValid()
+                            && cGameState.getPiece(move.targetHexagon().add(direction)) != null) {
+
+                        tempPiece = cGameState.getPiece(move.targetHexagon().add(direction));
+
+                        if (tempPiece.isConnectedHigh()) {
+                            tempHighConnect = true;
+                        }
+                        if (tempPiece.isConnectedLow()) {
+                            tempLowConnect = true;
+                        }
+                        if (otherColor == Piece.Color.RED) {
+                            if (tempPiece.isConnectedHigh() && move.targetHexagon().column() == 0
+                                        && move.targetHexagon().row() == move.targetHexagon().add(direction).row()
+                                    || tempPiece.isConnectedLow() && move.targetHexagon().column() == board - 1
+                                        && move.targetHexagon().row() == move.targetHexagon().add(direction).row()) {
+                                return move.targetHexagon();
+                            }
+                        }
+                        else {
+                            if (tempPiece.isConnectedHigh() && move.targetHexagon().row() == 0
+                                        && move.targetHexagon().column() == move.targetHexagon().add(direction).column()
+                                    || tempPiece.isConnectedLow() && move.targetHexagon().row() == board - 1
+                                        && move.targetHexagon().column() == move.targetHexagon().add(direction).column()) {
+                                return move.targetHexagon();
+                            }
+                        }
+                    }
+                }
+                if (tempHighConnect && tempLowConnect) {
+                    return move.targetHexagon();
+                }
+                tempLength = calculatePieceRating(tempPosition, usedColor);
+
+                if (cGameState.getPiece(tempPosition) != null && cGameState.getPiece(tempPosition).getColor() == otherColor) {
+                    tempLength = tempLength + countRow(tempPosition, cGameState) / cGameState.getHalfMoveCounter();
+                }
+            }
+            if (tempLength > bestLength) {
+                bestLength = tempLength;
+                bestPostition = tempPosition;
+            }
+            clear();
+        }
+        return bestPostition;
     }
 }
