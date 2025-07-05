@@ -51,7 +51,7 @@ public class CNNPlayer implements Player {
 
         gameTree.jumpTo(gameState);
 
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < 16; i++) {
             expandGameTree();
         }
 
@@ -60,23 +60,20 @@ public class CNNPlayer implements Player {
         }
 
         Model.Output output = gameTree.getCombinedOutput();
-        try (INDArray probs = Nd4j.createFromArray(output.policy())) {
+        try (INDArray logits = Nd4j.createFromArray(output.policy())) {
 
             for (int i = 0; i < BOARD_SIZE * BOARD_SIZE; i++) {
                 if (!gameState.isLegalMove(new Move(new Position(i)))) {
-                    probs.putScalar(i, -1e10);
+                    logits.putScalar(i, -1e10);
                 }
             }
 
-            Transforms.softmax(probs, false);
-
-            log.info("Probs: {}", probs);
-
             int targetIndex;
             if (gameData == null) {
-                targetIndex = Nd4j.argMax(probs).getInt(0);
+                targetIndex = Nd4j.argMax(logits).getInt(0);
             } else {
-                targetIndex = Nd4j.choice(Nd4j.arange(probs.length()), probs, 1).getInt(0);
+                Transforms.softmax(logits, false);
+                targetIndex = Nd4j.choice(Nd4j.arange(logits.length()), logits, 1).getInt(0);
                 gameData.add(gameState.clone(), output);
             }
             return new Move(new Position(targetIndex));

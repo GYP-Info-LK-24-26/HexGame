@@ -2,21 +2,28 @@ package de.hexgame.nn;
 
 import de.hexgame.logic.GameState;
 import de.hexgame.logic.Piece;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.deeplearning4j.nn.conf.ComputationGraphConfiguration;
+import org.deeplearning4j.nn.conf.ConvolutionMode;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
+import org.deeplearning4j.nn.conf.graph.ElementWiseVertex;
 import org.deeplearning4j.nn.conf.inputs.InputType;
+import org.deeplearning4j.nn.conf.layers.ActivationLayer;
+import org.deeplearning4j.nn.conf.layers.BatchNormalization;
 import org.deeplearning4j.nn.conf.layers.ConvolutionLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.MultiDataSet;
+import org.nd4j.linalg.dataset.api.iterator.MultiDataSetIterator;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.indexing.NDArrayIndex;
 import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 
+import java.io.File;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -34,28 +41,29 @@ public class Model extends Thread {
     private final Map<GameState, Output> cache = Collections.synchronizedMap(new WeakHashMap<>());
     private final BlockingQueue<Task> taskQueue = new ArrayBlockingQueue<>(256);
 
+    @SneakyThrows
+    public Model(File file, boolean loadUpdater) {
+        computationGraph = ComputationGraph.load(file, loadUpdater);
+    }
+
     public Model() {
         setDaemon(true);
-        ComputationGraphConfiguration config = new NeuralNetConfiguration.Builder()
+        ComputationGraphConfiguration.GraphBuilder config = new NeuralNetConfiguration.Builder()
                 .updater(new Adam(1e-3))
                 .graphBuilder()
                 .addInputs("input")
                 .setInputTypes(InputType.convolutional(BOARD_SIZE, BOARD_SIZE, NUM_INPUT_CHANNELS))
-                .addLayer("conv1", new ConvolutionLayer.Builder(3, 3)
-                        .nOut(64)
-                        .padding(1, 1)
-                        .activation(Activation.RELU)
-                        .build(), "input")
-                .addLayer("conv2", new ConvolutionLayer.Builder(3, 3)
-                        .nOut(64)
-                        .padding(1, 1)
-                        .activation(Activation.RELU)
-                        .build(), "conv1")
+                .addLayer("inputConv", new ConvolutionLayer.Builder(3, 3).convolutionMode(ConvolutionMode.Same).nOut(64).build(), "input");
 
-                .addLayer("policyConv", new ConvolutionLayer.Builder(1, 1)
+        String inName = "inputConv";
+        for (int i = 0; i < 12; i++) {
+            inName = addResidualBlock(config, i, inName);
+        }
+
+        config.addLayer("policyConv", new ConvolutionLayer.Builder(1, 1)
                         .nOut(2)
                         .activation(Activation.RELU)
-                        .build(), "conv2")
+                        .build(), inName)
                 .addLayer("policyOut", new OutputLayer.Builder(LossFunctions.LossFunction.MCXENT)
                         .nOut(BOARD_SIZE * BOARD_SIZE)
                         .activation(Activation.SOFTMAX)
@@ -64,17 +72,45 @@ public class Model extends Thread {
                 .addLayer("valueConv", new ConvolutionLayer.Builder(1, 1)
                         .nOut(1)
                         .activation(Activation.RELU)
-                        .build(), "conv2")
+                        .build(), inName)
                 .addLayer("valueOut", new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
                         .nOut(1)
                         .activation(Activation.TANH)
                         .build(), "valueConv")
 
-                .setOutputs("policyOut", "valueOut")
-                .build();
+                .setOutputs("policyOut", "valueOut");
 
-        computationGraph = new ComputationGraph(config);
+        computationGraph = new ComputationGraph(config.build());
         computationGraph.init();
+    }
+
+    private String addConvBatchNormBlock(ComputationGraphConfiguration.GraphBuilder config, String blockName, String inName, boolean useActivation) {
+        String convName = "conv_" + blockName;
+        String bnName = "batch_norm_" + blockName;
+        String actName = "relu_" + blockName;
+
+        config.addLayer(convName, new ConvolutionLayer.Builder(3, 3).nOut(64).convolutionMode(ConvolutionMode.Same).activation(Activation.IDENTITY).build(), inName);
+        config.addLayer(bnName, new BatchNormalization.Builder().nOut(64).build(), convName);
+        if (useActivation) {
+            config.addLayer(actName, new ActivationLayer.Builder().activation(Activation.RELU).build(), bnName);
+            return actName;
+        } else {
+            return bnName;
+        }
+    }
+
+    private String addResidualBlock(ComputationGraphConfiguration.GraphBuilder config, int blockNumber, String inName) {
+        String firstBlock = "residual_1_" + blockNumber;
+        String firstOut = "relu_residual_1_" + blockNumber;
+        String secondBlock = "residual_2_" + blockNumber;
+        String mergeBlock = "add_" + blockNumber;
+        String actBlock = "relu_" + blockNumber;
+
+        String firstBnOut = addConvBatchNormBlock(config, firstBlock, inName, true);
+        String secondBnOut = addConvBatchNormBlock(config, secondBlock, firstOut, false);
+        config.addVertex(mergeBlock, new ElementWiseVertex(ElementWiseVertex.Op.Add), firstBnOut, secondBnOut);
+        config.addLayer(actBlock, new ActivationLayer.Builder().activation(Activation.RELU).build(), mergeBlock);
+        return actBlock;
     }
 
     public CompletableFuture<Output> predict(GameState gameState) {
@@ -88,7 +124,16 @@ public class Model extends Thread {
         return task.future;
     }
 
-    public void extractFeatures(GameState gameState, INDArray featuresOut) {
+    public void fit(MultiDataSetIterator dataSetIterator, int numEpochs) {
+        computationGraph.fit(dataSetIterator, numEpochs);
+    }
+
+    @SneakyThrows
+    public void save(File file) {
+        computationGraph.save(file);
+    }
+
+    private void extractFeatures(GameState gameState, INDArray featuresOut) {
         featuresOut.assign(0);
 
         INDArray ownPieces = featuresOut.get(NDArrayIndex.point(0));

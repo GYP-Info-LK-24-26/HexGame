@@ -28,4 +28,11 @@ public class Piece implements Cloneable {
             throw new AssertionError();
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Piece piece = (Piece) o;
+        return color == piece.color;
+    }
 }

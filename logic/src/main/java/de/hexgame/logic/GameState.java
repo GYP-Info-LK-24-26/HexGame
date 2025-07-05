@@ -7,6 +7,7 @@ import lombok.Getter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 
 /**
@@ -225,5 +226,12 @@ public class GameState implements Cloneable {
         }
         h = 31 * h + (halfMoveCounter == 1 ? 1 : 0);
         return Long.reverse(h);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        GameState gameState = (GameState) o;
+        return halfMoveCounter == gameState.halfMoveCounter && Objects.deepEquals(pieces, gameState.pieces);
     }
 }
