@@ -10,7 +10,14 @@ import lombok.Setter;
 public class Piece implements Cloneable {
     public enum Color {
         RED,
-        BLUE
+        BLUE;
+
+        public Color invert() {
+            return switch (this) {
+                case RED -> BLUE;
+                case BLUE -> RED;
+            };
+        }
     }
     private Color color;
     private boolean connectedLow;

@@ -8,6 +8,7 @@ import de.igelstudios.igelengine.client.graphics.Line;
 import de.igelstudios.igelengine.client.graphics.Polygon;
 import de.igelstudios.igelengine.client.graphics.Renderer;
 import de.igelstudios.igelengine.client.keys.*;
+import de.igelstudios.igelengine.client.lang.Text;
 import de.igelstudios.igelengine.common.networking.PacketByteBuf;
 import de.igelstudios.igelengine.common.networking.client.Client;
 import org.joml.Vector2f;
@@ -28,7 +29,7 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
     private List<Polygon> cornerList;
     private List<Polygon> hexagonList;
     //this is the time that has pass between turn to avoid graphical overloading
-    private static final int MIN_TIME_PER_TURN = 1;
+    private static final int MIN_TIME_PER_TURN = 100;
     //this keeps track of the last time a move was made so that the minimum time can be enforced
     private long last_time_run = 0;
     private List<UIPlayer> playerList;
@@ -41,6 +42,9 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
     private boolean rendering;
     private boolean isRemote = false;
     private boolean running = false;
+    private Text redMoving = Text.translatable("red").setColor(1,0,0).setA(0.0f).update();
+    private Text blueMoving = Text.translatable("blue").setColor(0,0,1).setA(0.0f).update();
+    private Text sideChanged = Text.translatable("color_change").setColor(1,1,0).setA(0.0f).update();
 
     private UIGameBoard() {
         lineList = new ArrayList<>();
@@ -53,6 +57,8 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
         lineList.forEach(line -> line.setA(1));
         hexagonList.forEach(hex -> hex.setRGBA(1,1,1,1));
         cornerList.forEach(hex -> hex.setA(1));
+
+        redMoving.setA(1);
 
         HIDInput.activateListener(this);
     }
@@ -85,6 +91,12 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
         leftOffset = (80 - size) / 2;
         scale = (float) 45 / ((GameState.BOARD_SIZE + 1));
         yScale = length * 1.5f;
+
+        Renderer.get().render(redMoving,leftOffset - 1 - redMoving.getFullVisualLength(),45 - length * 2);
+        Renderer.get().render(sideChanged,leftOffset - 1 - sideChanged.getFullVisualLength(),45 - length * 2.5f);
+        sideChanged.setA(0);
+        Renderer.get().render(blueMoving,leftOffset - 1 - blueMoving.getFullVisualLength(),45 - length * 3);
+        blueMoving.setA(0);
 
         Line base = new Line(new Vector2f(leftOffset, 45 - length * 2),90,length,0.25f, Line.Type.CENTER).setRGBA(1,0,0,1);
         lineList.add(base);
@@ -126,7 +138,7 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
         Renderer.get().render(corn);
         corn = new Polygon(lineList.get(0).getStartUp(),lineList.get(5).getEndUp(),lineList.get(0).getOrg()).setRGBA(1,0,0,1);
         cornerList.add(corn);
-        Renderer.get().render(corn);
+       Renderer.get().render(corn);
 
         Line st = lineList.get(lineList.size() - 4);
         corn = new Polygon(lineList.get(lineList.size() - 3).getStartUp(),lineList.get(lineList.size() - 3).getOrg(),st.getEndUp()).setRGBA(1,0,0,1);
@@ -138,7 +150,7 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
             Line innerBase = null;
             for (int j = 0; j < GameState.BOARD_SIZE - 1; j++) {
                 if(i >= 1 && j == 9) {
-                   currentID++;
+                    currentID++;
                 }else if(i >= 2 && j == 0)currentID += 6;
                 Line topLeft = lineList.get(currentID + 2);
                 Line topRight = lineList.get(currentID + 1);
@@ -266,6 +278,17 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
     @Override
     public void onPlayerMove(Position move) {
         //this ensures that the minimum duration between turns is kept and that no turn is made to early
+        switch (gameState.getSideToMove().invert()){
+            case RED -> {
+                blueMoving.setA(0);
+                redMoving.setA(1);
+            }
+            case BLUE -> {
+                blueMoving.setA(1);
+                redMoving.setA(0);
+            }
+        }
+
         long deltaRun = System.currentTimeMillis() - last_time_run;
         if(deltaRun <= MIN_TIME_PER_TURN) {
             try {
@@ -274,13 +297,9 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
                 throw new RuntimeException(e);
             }
         }
-        System.out.println(hexagonList.size());
         Polygon hex = hexagonList.get(move.getIndex());
-        if(gameState.getPiece(move) != null) {
-            if (gameState.getPiece(move).getColor() == Piece.Color.RED)
-                hex.setRGBA(1, 0, 0, 1);
-            else hex.setRGBA(0, 0, 1, 1);
-        }
+        if(gameState.getPiece(move).getColor() == Piece.Color.RED)hex.setRGBA(1,0,0,1);
+        else hex.setRGBA(0,0,1,1);
         //Renderer.get().render(hex);
         //SceneObject obj = new SceneObject().setTex(TexturePool.getID(gameState.getPiece(move).getColor() == Piece.Color.RED? "red_hex.png":"blue_hex.png")).setSize(uniformSize);
         //if(gameState.getPiece(move).getColor() == Piece.Color.RED){
@@ -337,6 +356,9 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
 
         playerList.clear();
 
+        blueMoving.setA(0);
+        redMoving.setA(0);
+        sideChanged.setA(0);
         running = true;
 
         HIDInput.deactivateListener(this);
@@ -357,5 +379,18 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
 
     public boolean isRunning(){
         return running;
+    }
+
+    public void setMoving(Piece.Color color) {
+        switch (color) {
+            case RED:
+                blueMoving.setA(0.0f);
+                redMoving.setA(1.0f);
+                break;
+            case BLUE:
+                redMoving.setA(0.0f);
+                blueMoving.setA(1.0f);
+                break;
+        }
     }
 }
