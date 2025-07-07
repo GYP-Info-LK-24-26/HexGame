@@ -71,12 +71,14 @@ public class PlayGUI extends GUI {
                         int i = 0;
                         if(firstID == 0) {
                             first = server.getPlayerList().get(i);
+                            HexServer.addRelevantPlayer((RemotePlayer) first);
                             i++;
                         }else{
                             first = playerList.get(firstID).getConstructor().newInstance();
                         }
                         if(secondID == 0){
                             second = server.getPlayerList().get(i);
+                            HexServer.addRelevantPlayer((RemotePlayer) second);
                         }else {
                             second = playerList.get(secondID).getConstructor().newInstance();
                         }

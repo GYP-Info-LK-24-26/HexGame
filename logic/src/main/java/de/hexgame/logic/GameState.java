@@ -7,6 +7,7 @@ import lombok.Getter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 
 /**
@@ -46,6 +47,10 @@ public class GameState implements Cloneable {
 
     public Piece getPiece(Position position) {
         return pieces[position.getIndex()];
+    }
+
+    public Piece getPiece(int index) {
+        return pieces[index];
     }
 
     /**
@@ -206,5 +211,27 @@ public class GameState implements Cloneable {
         } catch (CloneNotSupportedException e) {
             throw new AssertionError();
         }
+    }
+
+    public long hashCodeLong() {
+        long h = 1;
+        for (Piece p : pieces) {
+            long code;
+            if (p == null) {
+                code = 0;
+            } else {
+                code = (p.getColor() == Piece.Color.RED) ? 1 : 2;
+            }
+            h = 31 * h + code;
+        }
+        h = 31 * h + (halfMoveCounter == 1 ? 1 : 0);
+        return Long.reverse(h);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        GameState gameState = (GameState) o;
+        return halfMoveCounter == gameState.halfMoveCounter && Objects.deepEquals(pieces, gameState.pieces);
     }
 }

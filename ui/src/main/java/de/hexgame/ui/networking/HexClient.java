@@ -2,6 +2,7 @@ package de.hexgame.ui.networking;
 
 import de.hexgame.ui.UIGameBoard;
 import de.hexgame.ui.gui.ConnectGUI;
+import de.hexgame.ui.gui.MainGUI;
 import de.igelstudios.igelengine.client.gui.GUIManager;
 import de.igelstudios.igelengine.common.networking.ErrorHandler;
 import de.igelstudios.igelengine.common.networking.client.Client;
@@ -10,6 +11,7 @@ import de.igelstudios.igelengine.common.networking.client.ClientConnectListener;
 public class HexClient implements ClientConnectListener {
     private Client client;
     private static HexClient instance;
+    private boolean stopped = false;
 
     public static void register() {
         Client.registerServer2ClientHandler("boardChange",BoardChangeListenerS2C::recieve);
@@ -37,9 +39,14 @@ public class HexClient implements ClientConnectListener {
 
     public static void stop(){
         if(instance != null){
+            instance.stopped = true;
             instance.client.stopClient();
             instance = null;
         }
+    }
+
+    public static void forceStop() {
+        stop();
     }
 
     @Override
@@ -49,7 +56,9 @@ public class HexClient implements ClientConnectListener {
 
     @Override
     public void playerDisConnect() {
-
+        UIGameBoard.get().endGame();
+        MainGUI gui = new MainGUI();
+        if(!stopped) gui.disconnected();
     }
 
     @Override
