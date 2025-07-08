@@ -212,6 +212,7 @@ public class GameState implements Cloneable {
                     clone.pieces[i] = pieces[i].clone();
                 }
             }
+            clone.playerMoveListeners = new ArrayList<>(playerMoveListeners);
             return clone;
         } catch (CloneNotSupportedException e) {
             throw new AssertionError();
