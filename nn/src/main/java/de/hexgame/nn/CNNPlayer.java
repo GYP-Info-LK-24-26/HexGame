@@ -11,6 +11,7 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.ops.transforms.Transforms;
 
+import java.io.File;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -19,6 +20,7 @@ import static de.hexgame.logic.GameState.BOARD_SIZE;
 
 @Slf4j
 public class CNNPlayer implements Player {
+    private static final File DEFAULT_MODEL_FILE = new File("training-data/model-1.zip");
     private static final int SIMULATION_COUNT = 400;
 
     private static int INSTANCE_COUNTER = 0;
@@ -31,6 +33,11 @@ public class CNNPlayer implements Player {
     private final Executor dispatcher = taskQueue::add;
     private int startedSimulations = 0;
     private int finishedSimulations = 0;
+
+    public CNNPlayer() {
+        this(new Model(DEFAULT_MODEL_FILE, false), null);
+        model.start();
+    }
 
     public CNNPlayer(Model model, GameData gameData) {
         name = String.format("CNN Player %d", ++INSTANCE_COUNTER);
@@ -47,6 +54,7 @@ public class CNNPlayer implements Player {
     @SneakyThrows
     @Override
     public Move think(GameState gameState) {
+        gameState = gameState.cloneWithoutListeners();
         startedSimulations = finishedSimulations = 0;
 
         gameTree.jumpTo(gameState);
@@ -60,23 +68,22 @@ public class CNNPlayer implements Player {
         }
 
         Model.Output output = gameTree.getCombinedOutput();
-        try (INDArray logits = Nd4j.createFromArray(output.policy())) {
-
-            for (int i = 0; i < BOARD_SIZE * BOARD_SIZE; i++) {
-                if (!gameState.isLegalMove(new Move(new Position(i)))) {
-                    logits.putScalar(i, -1e10);
-                }
+        float[] logitsJvm = output.policy();
+        for (int i = 0; i < BOARD_SIZE * BOARD_SIZE; i++) {
+            if (!gameState.isLegalMove(new Move(new Position(i)))) {
+                logitsJvm[i] = -1e10f;
             }
-
+        }
+        try (INDArray logits = Nd4j.createFromArray(logitsJvm)) {
             int targetIndex;
             if (gameData == null) {
                 targetIndex = Nd4j.argMax(logits).getInt(0);
             } else {
                 Transforms.softmax(logits, false);
                 targetIndex = Nd4j.choice(Nd4j.arange(logits.length()), logits, 1).getInt(0);
-                gameData.add(gameState.clone(), output);
+                gameData.add(gameState.clone(), new Model.Output(logits.toFloatVector(), output.value()));
             }
-            return new Move(new Position(targetIndex));
+            return new Move(new Position(targetIndex), output.value());
         }
     }
 

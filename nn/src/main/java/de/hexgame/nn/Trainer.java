@@ -9,7 +9,6 @@ import org.apache.commons.io.FileUtils;
 import org.deeplearning4j.datasets.iterator.file.FileMultiDataSetIterator;
 import org.nd4j.linalg.dataset.MultiDataSet;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,7 +22,7 @@ import java.util.stream.Stream;
 
 @Slf4j
 public class Trainer implements Runnable {
-    private static final int GAME_COUNT = 1000;
+    private static final int GAME_COUNT = 100;
     private static final Path DATA_DIRECTORY = Path.of("training-data");
     private static final Pattern MODEL_PATTERN = Pattern.compile("model-(\\d+).zip");
     private static final Pattern DATA_SET_PATTERN = Pattern.compile("dataset-(\\d+)");
@@ -57,7 +56,7 @@ public class Trainer implements Runnable {
                     }
                 }
                 Matcher dataSetMatcher = DATA_SET_PATTERN.matcher(fileName);
-                if (dataSetMatcher.matches() && !FileUtils.listFiles(file.toFile(), null, false).isEmpty()) {
+                if (dataSetMatcher.matches() && FileUtils.listFiles(file.toFile(), null, false).size() >= 10) {
                     int savedDataSetNumber = Integer.parseInt(dataSetMatcher.group(1));
                     if (savedDataSetNumber > dataSetNumber) {
                         dataSetNumber = savedDataSetNumber;
@@ -68,7 +67,7 @@ public class Trainer implements Runnable {
         if (modelNumber == 0) {
             model = new Model();
         } else {
-            model = new Model(new File(String.format("dataset-%d.dat", modelNumber)), true);
+            model = new Model(DATA_DIRECTORY.resolve(String.format("model-%d.zip", modelNumber)).toFile(), true);
         }
         if (dataSetNumber != 0) {
             dataSetPath = DATA_DIRECTORY.resolve(String.format("dataset-%d", dataSetNumber));
@@ -77,11 +76,12 @@ public class Trainer implements Runnable {
         while (dataSetNumber < 10) {
             if (dataSetNumber <= modelNumber) {
                 dataSetNumber++;
-                log.info("Starting training procedure {}...", dataSetNumber);
                 dataSetPath = Files.createDirectories(DATA_DIRECTORY.resolve(String.format("dataset-%d", dataSetNumber)));
+                log.info("Generating training data {}...", dataSetNumber);
                 generateDataSet();
             }
             modelNumber++;
+            log.info("Fitting the model {}...", modelNumber);
             fitModel();
             model.save(DATA_DIRECTORY.resolve(String.format("model-%d.zip", modelNumber)).toFile());
         }
@@ -99,10 +99,16 @@ public class Trainer implements Runnable {
         for (int i = 0; i < threadCount; i++) {
             threads[i].join();
         }
+        synchronized (this) {
+            if (!dataSetList.isEmpty()) {
+                MultiDataSet.merge(dataSetList).save(dataSetPath.resolve(UUID.randomUUID() + ".bin").toFile());
+                dataSetList.clear();
+            }
+        }
     }
 
     private void fitModel() {
-        model.fit(new FileMultiDataSetIterator(dataSetPath.toFile(), 512), 100);
+        model.fit(new FileMultiDataSetIterator(dataSetPath.toFile(), 128), 5);
     }
 
     @SneakyThrows
@@ -129,7 +135,7 @@ public class Trainer implements Runnable {
             log.info("Game {} has finished.", gameNumber);
             synchronized (this) {
                 if (dataSetList.size() >= 1000) {
-                    MultiDataSet.merge(dataSetList).save(dataSetPath.resolve(UUID.randomUUID() + ".zip").toFile());
+                    MultiDataSet.merge(dataSetList).save(dataSetPath.resolve(UUID.randomUUID() + ".bin").toFile());
                     dataSetList.clear();
                 }
             }
