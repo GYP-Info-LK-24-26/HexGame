@@ -40,7 +40,8 @@ Ein grafisch und strategisch anspruchsvolles Brettspiel mit KI-Gegnern, entwicke
 ## 🕹️ Spielanleitung
 
 - **Ziel:** Verbinde gegenüberliegende Seiten des Bretts mit einer ununterbrochenen Linie deiner Spielsteine.
-- Spieler 1 verbindet **oben ↔ unten**, Spieler 2 **links ↔ rechts**.
+- Spieler 1 verbindet **links ↔ rechts**, Spieler 2 **oben ↔ unten**.
+- Nach dem ersten Zug darf Spieler 2 die Seiten tauschen, wenn er möchte.
 - Spiele gegen einen menschlichen Gegner oder wähle aus mehreren KI-Gegnern mit anpassbarer Schwierigkeit.
 - Steuerung erfolgt intuitiv über Maus und grafische Benutzeroberfläche (IgelEngine mit OpenGL).
 
