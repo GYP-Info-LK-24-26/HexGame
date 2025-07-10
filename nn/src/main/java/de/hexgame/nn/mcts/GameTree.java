@@ -21,7 +21,7 @@ public class GameTree {
     public void jumpTo(GameState gameState) {
         root = root.jumpTo(gameState);
         if (root != null) {
-            root.addDirichletNoise();
+            root.addDirichletNoise(); // FIXME: Could add noise multiple times
         } else {
             root = new TreeNode(null, null, gameState);
         }

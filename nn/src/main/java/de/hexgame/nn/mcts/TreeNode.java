@@ -33,7 +33,7 @@ public class TreeNode {
     }
 
     public float getMeanValue() {
-        return visits == 0.0f ? 0.0f : valueSum / visits;
+        return visits == 0 ? 0.0f : valueSum / visits;
     }
 
     public void addDirichletNoise() {
