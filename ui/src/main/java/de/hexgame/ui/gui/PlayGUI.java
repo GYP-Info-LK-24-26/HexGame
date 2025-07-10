@@ -16,13 +16,14 @@ import de.igelstudios.igelengine.common.networking.PacketByteBuf;
 import org.joml.Vector2f;
 
 import java.io.*;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 public class PlayGUI extends GUI {
-    private static final int DIFFICULTIES = 3;
+    private static final int DIFFICULTIES = 5;
     private List<Class<? extends Player>> playerList;
     private List<Text> firstTexts;
     private List<Text> secondTexts;
@@ -77,8 +78,8 @@ public class PlayGUI extends GUI {
             public void clicked(MouseButton button) {
                 try {
                     GUIManager.removeGui();
-                    Player first;
-                    Player second;
+                    Player first = null;
+                    Player second = null;
                     if(withRemote){
                         int i = 0;
                         if(firstID == 0) {
@@ -86,17 +87,41 @@ public class PlayGUI extends GUI {
                             HexServer.addRelevantPlayer((RemotePlayer) first);
                             i++;
                         }else{
-                            first = playerList.get(firstID).getConstructor().newInstance();
+                            for (Constructor<?> declaredConstructor : playerList.get(firstID).getDeclaredConstructors()) {
+                                if(declaredConstructor.getParameterCount() == 1 && declaredConstructor.getParameterTypes()[0] == int.class){
+                                    first = playerList.get(firstID).getConstructor(int.class).newInstance(diffucultyFirst);
+                                    break;
+                                }
+                            }
+                            if(first == null) first = playerList.get(firstID).getConstructor().newInstance();
                         }
                         if(secondID == 0){
                             second = server.getPlayerList().get(i);
                             HexServer.addRelevantPlayer((RemotePlayer) second);
                         }else {
-                            second = playerList.get(secondID).getConstructor().newInstance();
+                            for (Constructor<?> declaredConstructor : playerList.get(secondID).getDeclaredConstructors()) {
+                                if(declaredConstructor.getParameterCount() == 1 && declaredConstructor.getParameterTypes()[0] == int.class){
+                                    second = playerList.get(secondID).getConstructor(int.class).newInstance(diffucultySecond);
+                                    break;
+                                }
+                            }
+                            if(second == null) second = playerList.get(secondID).getConstructor().newInstance();
                         }
                     }else{
-                        first = playerList.get(firstID).getConstructor().newInstance();
-                        second = playerList.get(secondID).getConstructor().newInstance();
+                        for (Constructor<?> declaredConstructor : playerList.get(firstID).getDeclaredConstructors()) {
+                            if(declaredConstructor.getParameterCount() == 1 && declaredConstructor.getParameterTypes()[0] == int.class){
+                                first = playerList.get(firstID).getConstructor(int.class).newInstance(diffucultyFirst);
+                                break;
+                            }
+                        }
+                        if(first == null) first = playerList.get(firstID).getConstructor().newInstance();
+                        for (Constructor<?> declaredConstructor : playerList.get(secondID).getDeclaredConstructors()) {
+                            if(declaredConstructor.getParameterCount() == 1 && declaredConstructor.getParameterTypes()[0] == int.class){
+                                second = playerList.get(secondID).getConstructor(int.class).newInstance(diffucultySecond);
+                                break;
+                            }
+                        }
+                        if(second == null) second = playerList.get(secondID).getConstructor().newInstance();
                     }
                     //if(first instanceof UIPlayer && second instanceof UIPlayer)return;
                     if(first instanceof UIPlayer)UIGameBoard.addPlayer((UIPlayer) first);

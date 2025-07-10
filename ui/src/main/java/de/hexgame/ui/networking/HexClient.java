@@ -42,6 +42,7 @@ public class HexClient implements ClientConnectListener {
             instance.stopped = true;
             instance.client.stopClient();
             instance = null;
+            UIGameBoard.get().setRemote(false);
         }
     }
 
