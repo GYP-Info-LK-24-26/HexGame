@@ -22,6 +22,8 @@ Ein grafisch und strategisch anspruchsvolles Brettspiel mit KI-Gegnern, entwicke
 
    ```bash
    git clone https://github.com/GYP-Info-LK-24-26/HexGame.git
+   git submodule init
+   git submodule update
    cd HexGame
    ```
 
