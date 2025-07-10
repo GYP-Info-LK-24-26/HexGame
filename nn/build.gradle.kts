@@ -3,21 +3,23 @@ plugins {
     id("buildlogic.java-conventions")
 }
 
+val dl4j        = "1.0.0-M2.1"
+val javacppCuda = "11.6-8.3-1.5.7"   // JavaCPP 1.5.7 presets that match DL4J M2.1
+
+repositories {
+    mavenCentral()
+}
+
 dependencies {
-    implementation("org.deeplearning4j:deeplearning4j-core:1.0.0-M2.1") {
-        exclude(group = "org.bytedeco", module = "opencv-platform")
-        exclude(group = "org.bytedeco", module = "ffmpeg-platform")
-        exclude(group = "com.twelvemonkeys.imageio", module = "imageio-core")
-        exclude(group = "com.twelvemonkeys.imageio", module = "imageio-jpeg")
-        exclude(group = "com.twelvemonkeys.imageio", module = "imageio-pnm")
-        exclude(group = "com.twelvemonkeys.imageio", module = "imageio-tiff")
-        exclude(group = "com.twelvemonkeys.imageio", module = "imageio-bmp")
-        exclude(group = "com.twelvemonkeys.imageio", module = "imageio-psd")
-        exclude(group = "org.deeplearning4j", module = "deeplearning4j-ui-components")
-        exclude(group = "org.bytedeco", module = "javacv")
-    }
-    implementation("org.nd4j:nd4j-native-platform:1.0.0-M2.1")
-    implementation("org.nd4j:nd4j-cuda-11.6-platform:1.0.0-M2.1")
+    // ND4J CUDA backend ─ Java code + native libs
+    implementation("org.nd4j:nd4j-cuda-11.6:$dl4j")
+    runtimeOnly("org.nd4j:nd4j-cuda-11.6:$dl4j:windows-x86_64-cudnn")
+
+    // CUDA runtime (brings jnicudart + CUDA DLLs)  **← NEW**
+    runtimeOnly("org.bytedeco:cuda-platform-redist:$javacppCuda")
+
+    // DL4J itself
+    implementation("org.deeplearning4j:deeplearning4j-core:$dl4j")
     implementation(project(":logic"))
 }
 

@@ -8,6 +8,7 @@ import de.hexgame.ui.networking.BoardChangeListenerS2C;
 import de.hexgame.ui.networking.GameEndS2C;
 import de.hexgame.ui.networking.HexServer;
 import de.hexgame.ui.networking.RemotePlayer;
+import de.igelstudios.igelengine.client.graphics.Line;
 import de.igelstudios.igelengine.client.graphics.Renderer;
 import de.igelstudios.igelengine.client.gui.*;
 import de.igelstudios.igelengine.client.lang.Text;
@@ -21,11 +22,17 @@ import java.util.List;
 import java.util.Objects;
 
 public class PlayGUI extends GUI {
+    private static final int DIFFICULTIES = 3;
     private List<Class<? extends Player>> playerList;
     private List<Text> firstTexts;
     private List<Text> secondTexts;
     private int firstID = -1;
     private int secondID = -1;
+    private Line difSelectorFirst;
+    private Line difSelectorSecond;
+    private int diffucultyFirst = 0;
+    private int diffucultySecond = 0;
+
     public PlayGUI(boolean withRemote,HexServer server) {
         GUIManager.setGUI(this);
         try(InputStream stream = this.getClass().getClassLoader().getResourceAsStream("playerClasses.txt")) {
@@ -56,6 +63,11 @@ public class PlayGUI extends GUI {
 
         firstTexts = new ArrayList<>();
         secondTexts = new ArrayList<>();
+
+        difSelectorFirst = new Line(new Vector2f(29.75f,30 - playerList.size() * 4),0,0.5f,1, Line.Type.CENTER);
+        render(difSelectorFirst);
+        difSelectorSecond = new Line(new Vector2f(39.75f,30 - playerList.size() * 4),0,0.5f,1, Line.Type.CENTER);
+        render(difSelectorSecond);
 
         Button startBtn = new Button(new Vector2f(36,34),new Vector2f(1,4));
         addButton(startBtn);
@@ -104,6 +116,7 @@ public class PlayGUI extends GUI {
                     if(withRemote){
                         HexServer.sendToEveryone("start",PacketByteBuf.create());
                     }
+
                 } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                          NoSuchMethodException e) {
                     throw new RuntimeException(e);
@@ -140,7 +153,31 @@ public class PlayGUI extends GUI {
                     secondText.setColor(1,0,0);
                 }
             });
+
+
             secondTexts.add(secondText);
+        }
+
+        render(new Line(new Vector2f(30,30 - playerList.size() * 4),0,DIFFICULTIES - 1,0.25f, Line.Type.CENTER,0x96,0x4b,0,1));
+        render(new Line(new Vector2f(40,30 - playerList.size() * 4),0,DIFFICULTIES - 1,0.25f, Line.Type.CENTER,0x96,0x4b,0,1));
+
+        for (int i = 0; i < 2; i++) {
+            final boolean side = i == 1;
+            for (int j = 0; j < DIFFICULTIES; j++) {
+                Button btn = new Button(new Vector2f(i * 10 + j + 29.5f,30 - playerList.size() * 4),new Vector2f(1,1));
+                addButton(btn);
+                int finalJ = j;
+                btn.addListener(button -> {
+                    if(button != MouseButton.LMB)return;
+                    if(side){
+                        diffucultySecond = finalJ;
+                        difSelectorSecond.setStart(new Vector2f(39.75f + finalJ,30 - playerList.size() * 4));
+                    }else{
+                        diffucultyFirst = finalJ;
+                        difSelectorFirst.setStart(new Vector2f(29.75f + finalJ,30 - playerList.size() * 4));
+                    }
+                });
+            }
         }
     }
 }

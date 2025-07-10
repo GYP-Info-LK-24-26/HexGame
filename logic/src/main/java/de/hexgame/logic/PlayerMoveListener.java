@@ -1,7 +1,9 @@
 package de.hexgame.logic;
 
 
-//Hook for anything that needs an update when a move is made
+/**
+ * This constitutes a hook that when registered in the corresponding {@link GameState} gets notified once a player made a move
+ */
 public interface PlayerMoveListener {
     void onPlayerMove(Position move);
 }

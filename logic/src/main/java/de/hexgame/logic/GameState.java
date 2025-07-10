@@ -197,6 +197,11 @@ public class GameState implements Cloneable {
         }
     }
 
+    /**
+     * Clones the Game state and all pieces so that the cloned pieces do not interfere with the original ones
+     * @return the cloned Game state with cloned pieces
+     * @see #cloneWithoutListeners()
+     */
     @Override
     public GameState clone() {
         try {
@@ -207,10 +212,23 @@ public class GameState implements Cloneable {
                     clone.pieces[i] = pieces[i].clone();
                 }
             }
+            clone.playerMoveListeners = new ArrayList<>(playerMoveListeners);
             return clone;
         } catch (CloneNotSupportedException e) {
             throw new AssertionError();
         }
+    }
+
+    /**
+     * Clones the Game state and all pieces so that the cloned pieces do not interfere with the original ones<br>
+     * the listeners are cleared here so that one may use this for non-interactive thinking
+     * @return the cloned Game state with cloned pieces and without listeners
+     * @see #clone()
+     */
+    public GameState cloneWithoutListeners(){
+        GameState clone = clone();
+        clone.playerMoveListeners.clear();
+        return clone;
     }
 
     public long hashCodeLong() {

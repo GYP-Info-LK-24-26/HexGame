@@ -12,7 +12,7 @@ public class Util {
         boolean tip = y - Math.floor(y) >= 0.65;
 
         int yRow = GameState.BOARD_SIZE - (int) Math.floor(y) - 1;
-        int xRow = (int) Math.floor(x - (double) yRow / 2 + 0.3);
+        int xRow = (int) Math.floor(x - (double) yRow / 2 + 0.02);
         double deltaY = y - Math.floor(y);
         double deltaX = (x - (double) yRow / 2 + 0.3) - Math.floor((x - (double) yRow / 2 + 0.3));
         double delta = deltaY - deltaX;
@@ -22,10 +22,10 @@ public class Util {
         if(tip){
             if(deltaX > 0.6 && yVal > -0.6*(xVal - 0.5) + 0.95){
                 yRow--;
-                xRow = (int) Math.floor(x - (double) yRow / 2 + 0.3);
-            } else if(!(delta > 0 && delta < 0.65) && deltaX < 0.6){
+                xRow = (int) Math.floor(x - (double) yRow / 2 + 0.02);
+            } else if(deltaX < 0.6 && yVal > 0.6*(xVal - 0.5) + 0.85){
                 yRow--;
-                xRow = (int) Math.floor(x - (double) yRow / 2 + 0.3);
+                xRow = (int) Math.floor(x - (double) yRow / 2 + 0.02);
             }
         }
 

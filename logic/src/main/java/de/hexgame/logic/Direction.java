@@ -3,6 +3,9 @@ package de.hexgame.logic;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+/**
+ * Describes all directions that are possible from a game piece, which are six in total named by their respective graphical relation
+ */
 @AllArgsConstructor
 @Getter
 public enum Direction {

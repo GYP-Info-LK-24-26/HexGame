@@ -29,8 +29,7 @@ public class FinnAlgoPlayer implements Player {
     public Move think(GameState gameState) {
         this.startMillis = System.currentTimeMillis();
         bestEval = 0;
-        gameState = gameState.clone();
-        gameState.setPlayerMoveListeners(new ArrayList<>());
+        gameState = gameState.cloneWithoutListeners();
         runIterativeDeepeningSearch(gameState);
         bestMove = new Move(bestMove.targetHexagon(), 0.5 + 0.5 * (2 / (1 + Math.exp(-0.002 * bestEval)) - 1));
         return bestMove;
