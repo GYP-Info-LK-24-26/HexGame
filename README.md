@@ -21,9 +21,7 @@ Ein grafisch und strategisch anspruchsvolles Brettspiel mit KI-Gegnern, entwicke
 1. Repository klonen:
 
    ```bash
-   git clone https://github.com/GYP-Info-LK-24-26/HexGame.git
-   git submodule init
-   git submodule update
+   git clone --recursive https://github.com/GYP-Info-LK-24-26/HexGame.git
    cd HexGame
    ```
 
