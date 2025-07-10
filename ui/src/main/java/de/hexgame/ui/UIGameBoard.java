@@ -22,7 +22,7 @@ import static java.lang.Thread.sleep;
  * this class is instanced so only one instance may exist during runtime which is available via {@link UIGameBoard#get()}
  */
 //the size of the screen is 80 * 45,the bottom row is kept clear to avoid collision with on-screen objects and to make it look better
-public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
+public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinChanceChangeListener {
     private static UIGameBoard instance;
     private GameState gameState;
     private List<Line> lineList;
@@ -45,6 +45,8 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
     private Text redMoving = Text.translatable("red").setColor(1,0,0).setA(0.0f).update();
     private Text blueMoving = Text.translatable("blue").setColor(0,0,1).setA(0.0f).update();
     private Text sideChanged = Text.translatable("color_change").setColor(1,1,0).setA(0.0f).update();
+    private Text winChanceRed = Text.literal("");
+    private Text winChanceBlue = Text.literal("");
 
     private UIGameBoard() {
         lineList = new ArrayList<>();
@@ -392,5 +394,10 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener {
                 blueMoving.setA(1.0f);
                 break;
         }
+    }
+
+    @Override
+    public void onWinChangeChange(Player player, double newChange) {
+
     }
 }
