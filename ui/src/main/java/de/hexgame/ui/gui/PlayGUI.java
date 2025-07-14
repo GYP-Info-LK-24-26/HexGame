@@ -129,13 +129,12 @@ public class PlayGUI extends GUI {
                     //Renderer.get().clear();
                     UIGameBoard.get().startRendering();
                     Game game = new Game(first, second);
-                    game.getGameState().addPlayerMoveListener(UIGameBoard.get());
+                    UIGameBoard.get().init(game,first,second);
                     if(withRemote){
                         game.getGameState().addPlayerMoveListener(new BoardChangeListenerS2C());
                         game.addPlayerWinListener(new GameEndS2C());
                     }
                     game.addPlayerWinListener(player -> new WinGUI(player.getName()));
-                    UIGameBoard.setGameState(game.getGameState());
                     game.asThread().start();
 
                     if(withRemote){

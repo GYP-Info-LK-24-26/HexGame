@@ -33,6 +33,8 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
     //this keeps track of the last time a move was made so that the minimum time can be enforced
     private long last_time_run = 0;
     private List<UIPlayer> playerList;
+    private Player playerA;
+    private Player playerB;
     private Vector2f uniformSize;
     private float leftOffset;
     private float scale;
@@ -53,6 +55,18 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
         cornerList = new ArrayList<>();
         hexagonList = new ArrayList<>();
         playerList = new ArrayList<>();
+    }
+
+    /**
+     * Initialises the connection between UIGameBoard and game
+     * @param game the game to connect
+     */
+    public void init(Game game,Player playerA,Player playerB) {
+        game.getGameState().addPlayerMoveListener(this);
+        this.gameState = game.getGameState();
+
+        this.playerA = playerA;
+        this.playerB = playerB;
     }
 
     public void resumeRendering(){

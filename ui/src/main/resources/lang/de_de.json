@@ -1,0 +1,32 @@
+{
+  "play": "Spielen",
+  "settings": "Einstellungen",
+  "connect": "Verbinden",
+  "host": "Host",
+  "quit": "Beenden",
+
+  "red": "rot",
+  "blue": "Blau",
+  "color_change": "Farbwechsel",
+
+  "connect_suc": "Verbunden",
+  "connect_un": "Verbindung fehlgeschlagen",
+
+  "start": "Start",
+
+  "con_interrupted": "Verbindung geschlossen",
+  "player_disCon": "Spieler verlassen",
+
+  "won": "Gewonnen",
+  "player_won": "hat gewonnen",
+
+  "main_menu": "Hauptmenü",
+
+  "de.hexgame.ui.UIPlayer": "Localer Spieler",
+  "de.hexgame.ui.networking.RemotePlayer": "Coop Spieler",
+  "de.hexgame.logic.RandomPlayer": "Zufallsspieler",
+
+  "save": "Speichern",
+  "saved": "Gespeichert",
+  "lang": "Sprache"
+}
