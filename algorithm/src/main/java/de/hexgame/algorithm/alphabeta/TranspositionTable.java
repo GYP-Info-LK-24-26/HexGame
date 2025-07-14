@@ -1,4 +1,4 @@
-package de.hexgame.nn;
+package de.hexgame.algorithm.alphabeta;
 
 import de.hexgame.logic.Move;
 

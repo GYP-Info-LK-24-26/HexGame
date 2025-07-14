@@ -2,6 +2,7 @@ package de.hexgame.nn;
 
 import de.hexgame.logic.GameState;
 import de.hexgame.logic.Piece;
+import de.hexgame.nn.training.ExperienceBuffer;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.deeplearning4j.nn.conf.ComputationGraphConfiguration;
@@ -9,18 +10,12 @@ import org.deeplearning4j.nn.conf.ConvolutionMode;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.graph.ElementWiseVertex;
 import org.deeplearning4j.nn.conf.inputs.InputType;
-import org.deeplearning4j.nn.conf.layers.ActivationLayer;
-import org.deeplearning4j.nn.conf.layers.BatchNormalization;
-import org.deeplearning4j.nn.conf.layers.ConvolutionLayer;
-import org.deeplearning4j.nn.conf.layers.OutputLayer;
+import org.deeplearning4j.nn.conf.layers.*;
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.concurrency.AffinityManager;
 import org.nd4j.linalg.api.memory.MemoryWorkspace;
 import org.nd4j.linalg.api.memory.conf.WorkspaceConfiguration;
-import org.nd4j.linalg.api.memory.enums.AllocationPolicy;
-import org.nd4j.linalg.api.memory.enums.ResetPolicy;
-import org.nd4j.linalg.api.memory.enums.SpillPolicy;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.MultiDataSet;
 import org.nd4j.linalg.factory.Nd4j;
@@ -31,31 +26,28 @@ import org.nd4j.linalg.lossfunctions.LossFunctions;
 import java.io.File;
 import java.nio.FloatBuffer;
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import static de.hexgame.logic.GameState.BOARD_SIZE;
 
 @Slf4j
 @SuppressWarnings("resource")
 public class Model extends Thread {
-    private static final int NUM_INPUT_CHANNELS = 6;
-    private static final int BATCH_SIZE = 128;
+    private static final int NUM_INPUT_CHANNELS = 5;
+    private static final int BATCH_SIZE = 256;
     private static final WorkspaceConfiguration workspaceConfig = WorkspaceConfiguration.builder()
-            .initialSize(256L * 1024 * 1024)
-            .policyAllocation(AllocationPolicy.STRICT)
-            .policyReset(ResetPolicy.BLOCK_LEFT)
-            .policySpill(SpillPolicy.FAIL)
             .build();
     private static final String workspaceId = "model-gpu";
 
     private final ComputationGraph computationGraph;
     private final Map<GameState, Output> cache = Collections.synchronizedMap(new WeakHashMap<>());
-    private final BlockingQueue<Task> taskQueue = new ArrayBlockingQueue<>(256);
+    private final BlockingQueue<Task> taskQueue = new LinkedBlockingQueue<>();
 
     @SneakyThrows
     public Model(File file, boolean loadUpdater) {
+        setDaemon(true);
         computationGraph = ComputationGraph.load(file, loadUpdater);
     }
 
@@ -63,12 +55,12 @@ public class Model extends Thread {
         setDaemon(true);
         ComputationGraphConfiguration.GraphBuilder config = new NeuralNetConfiguration.Builder()
                 .updater(new Adam(1e-3))
+                .weightDecay(1e-4)
                 .graphBuilder()
                 .addInputs("input")
-                .setInputTypes(InputType.convolutional(BOARD_SIZE, BOARD_SIZE, NUM_INPUT_CHANNELS))
-                .addLayer("inputConv", new ConvolutionLayer.Builder(3, 3).convolutionMode(ConvolutionMode.Same).nOut(64).build(), "input");
+                .setInputTypes(InputType.convolutional(BOARD_SIZE, BOARD_SIZE, NUM_INPUT_CHANNELS));
 
-        String inName = "inputConv";
+        String inName = addConvBatchNormBlock(config, "init", "input", true);
         for (int i = 0; i < 12; i++) {
             inName = addResidualBlock(config, i, inName);
         }
@@ -88,10 +80,14 @@ public class Model extends Thread {
                         .convolutionMode(ConvolutionMode.Same)
                         .activation(Activation.RELU)
                         .build(), inName)
+                .addLayer("valueFC", new DenseLayer.Builder()
+                        .nOut(128)
+                        .activation(Activation.RELU)
+                        .build(), "valueConv")
                 .addLayer("valueOut", new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
                         .nOut(1)
                         .activation(Activation.TANH)
-                        .build(), "valueConv")
+                        .build(), "valueFC")
 
                 .setOutputs("policyOut", "valueOut");
 
@@ -139,8 +135,28 @@ public class Model extends Thread {
         return task.future;
     }
 
-    public void fit(MultiDataSet dataSet, int numEpochs) {
-        for (int i = 0; i < numEpochs; i++) {
+    public void fit(ExperienceBuffer experienceBuffer, int numBatches) {
+        for (int i = 0; i < numBatches; i++) {
+            org.nd4j.linalg.dataset.api.MultiDataSet dataSet = experienceBuffer.sample(BATCH_SIZE);
+            // Mirror half of the data to improve model generalisation
+            INDArray newFeatures = dataSet.getFeatures(0);
+            INDArray features = newFeatures.dup();
+            INDArray newPolicy = dataSet.getLabels(0);
+            INDArray policy = newPolicy.dup();
+            for (int sampleIndex = 0; sampleIndex < BATCH_SIZE / 2; sampleIndex++) {
+                for (int row = 0; row < BOARD_SIZE; row++) {
+                    int invertedRow = BOARD_SIZE - 1 - row;
+                    for (int column = 0; column < BOARD_SIZE; column++) {
+                        int invertedColumn = BOARD_SIZE - 1 - column;
+                        newFeatures.putScalar(sampleIndex, 0, invertedRow, invertedColumn,
+                                features.getFloat(sampleIndex, 0, row, column));
+                        newFeatures.putScalar(sampleIndex, 1, invertedRow, invertedColumn,
+                                features.getFloat(sampleIndex, 1, row, column));
+                        newPolicy.putScalar(sampleIndex, (long) invertedRow * BOARD_SIZE + invertedColumn,
+                                policy.getFloat(sampleIndex, row * BOARD_SIZE + column));
+                    }
+                }
+            }
             computationGraph.fit(dataSet);
         }
     }

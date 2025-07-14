@@ -3,6 +3,7 @@ package de.hexgame.nn.mcts;
 import de.hexgame.logic.GameState;
 import de.hexgame.logic.Move;
 import de.hexgame.nn.Model;
+import lombok.Getter;
 import org.apache.commons.math3.distribution.GammaDistribution;
 
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ public class TreeNode {
     private GameState gameState; // lazily evaluated
     private Model.Output modelOutput;
 
+    @Getter
     private int visits = 0;
     private float valueSum = 0.0f;
 
@@ -54,7 +56,7 @@ public class TreeNode {
     }
 
     public TreeNode jumpTo(GameState gameState) {
-        if (this.gameState.getHalfMoveCounter() >= gameState.getHalfMoveCounter()) {
+        if (this.gameState.getHalfMoveCounter() > gameState.getHalfMoveCounter()) {
             return null;
         }
 
