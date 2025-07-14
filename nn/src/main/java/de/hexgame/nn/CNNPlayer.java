@@ -51,7 +51,6 @@ public class CNNPlayer implements Player {
     @SneakyThrows
     @Override
     public Move think(GameState gameState) {
-        gameState = gameState.cloneWithoutListeners();
         startedSimulations = finishedSimulations = 0;
 
         gameTree.jumpTo(gameState);
@@ -67,7 +66,7 @@ public class CNNPlayer implements Player {
 
         Model.Output output = gameTree.getCombinedOutput();
         float[] policy = output.policy();
-        int targetIndex = -1;
+        int targetIndex = gameState.getLegalMoves().getFirst().getIndex();
         // Check if collecting training data
         if (gameData == null) {
             // Select best move
@@ -92,8 +91,9 @@ public class CNNPlayer implements Player {
             float randomValue = ThreadLocalRandom.current().nextFloat();
             for (int i = 0; i < policy.length; i++) {
                 randomValue -= policy[i];
-                if (randomValue < 1e-6) {
+                if (randomValue <= 0.0f) {
                     targetIndex = i;
+                    break;
                 }
             }
             gameData.add(gameState.clone(), new Model.Output(policy, output.value()));

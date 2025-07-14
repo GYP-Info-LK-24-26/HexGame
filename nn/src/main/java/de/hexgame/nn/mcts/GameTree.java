@@ -23,7 +23,7 @@ public class GameTree {
     public void jumpTo(GameState gameState) {
         TreeNode newRoot = root.jumpTo(gameState);
         if (newRoot == null) {
-            newRoot = new TreeNode(null, null, gameState);
+            newRoot = new TreeNode(null, null, gameState.clone());
         } else if (useNoise && newRoot.getVisits() > 0) {
             newRoot.addDirichletNoise();
         }
