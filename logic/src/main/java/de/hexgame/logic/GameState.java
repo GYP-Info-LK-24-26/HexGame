@@ -26,23 +26,12 @@ public class GameState implements Cloneable {
     /// counts the number of individual moves made
     private int halfMoveCounter;
     private Position lastChangedPosition;
-    //keeps track of every listener hook
-    private List<PlayerMoveListener> playerMoveListeners;
-
-    /**
-     * this adds a listener for player moves
-     * @param playerMoveListener the listener
-     */
-    public void addPlayerMoveListener(PlayerMoveListener playerMoveListener) {
-        if(playerMoveListeners != null)playerMoveListeners.add(playerMoveListener);
-    }
 
     public GameState() {
         pieces = new Piece[BOARD_SIZE * BOARD_SIZE];
         finished = false;
         sideToMove = Piece.Color.RED;
         halfMoveCounter = 0;
-        playerMoveListeners = new ArrayList<>();
     }
 
     public Piece getPiece(Position position) {
@@ -87,7 +76,6 @@ public class GameState implements Cloneable {
         }
         pieces[position.getIndex()] = piece;
         update(position);
-        playerMoveListeners.forEach(listener -> listener.onPlayerMove(position));
     }
 
     public boolean isLegalMove(Move move) {
@@ -212,7 +200,6 @@ public class GameState implements Cloneable {
                     clone.pieces[i] = pieces[i].clone();
                 }
             }
-            clone.playerMoveListeners = new ArrayList<>(playerMoveListeners);
             return clone;
         } catch (CloneNotSupportedException e) {
             throw new AssertionError();
@@ -225,9 +212,9 @@ public class GameState implements Cloneable {
      * @return the cloned Game state with cloned pieces and without listeners
      * @see #clone()
      */
+    @Deprecated(forRemoval = true)
     public GameState cloneWithoutListeners(){
         GameState clone = clone();
-        clone.playerMoveListeners.clear();
         return clone;
     }
 

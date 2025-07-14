@@ -44,11 +44,13 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
     private boolean rendering;
     private boolean isRemote = false;
     private boolean running = false;
-    private Text redMoving = Text.translatable("red").setColor(1,0,0).setA(0.0f).update();
-    private Text blueMoving = Text.translatable("blue").setColor(0,0,1).setA(0.0f).update();
+    private Text firstMoving = Text.translatable("first").setColor(1,0,0).setA(0.0f).update();
+    private Text secondMoving = Text.translatable("second").setColor(0,0,1).setA(0.0f).update();
     private Text sideChanged = Text.translatable("color_change").setColor(1,1,0).setA(0.0f).update();
-    private Text winChanceRed = Text.literal("");
-    private Text winChanceBlue = Text.literal("");
+    private Text firstChance = Text.literal("");
+    private Text winChanceFirstTxt = Text.translatable("first_chance").append(firstChance);
+    private Text secondChance = Text.literal("");
+    private Text winChanceSecondTxt = Text.translatable("second_chance").append(secondChance);
 
     private UIGameBoard() {
         lineList = new ArrayList<>();
@@ -62,7 +64,8 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
      * @param game the game to connect
      */
     public void init(Game game,Player playerA,Player playerB) {
-        game.getGameState().addPlayerMoveListener(this);
+        game.addPlayerMoveListener(this);
+        game.addWinChanceChangeListener(this);
         this.gameState = game.getGameState();
 
         this.playerA = playerA;
@@ -74,7 +77,9 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
         hexagonList.forEach(hex -> hex.setRGBA(1,1,1,1));
         cornerList.forEach(hex -> hex.setA(1));
 
-        redMoving.setA(1);
+        firstMoving.setA(1);
+        winChanceFirstTxt.setA(1);
+        winChanceSecondTxt.setA(1);
 
         HIDInput.activateListener(this);
     }
@@ -108,11 +113,14 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
         scale = (float) 45 / ((GameState.BOARD_SIZE + 1));
         yScale = length * 1.5f;
 
-        Renderer.get().render(redMoving,leftOffset - 1 - redMoving.getFullVisualLength(),45 - length * 2);
+        Renderer.get().render(firstMoving,leftOffset - 1 - firstMoving.getFullVisualLength(),45 - length * 2);
         Renderer.get().render(sideChanged,leftOffset - 1 - sideChanged.getFullVisualLength(),45 - length * 2.5f);
         sideChanged.setA(0);
-        Renderer.get().render(blueMoving,leftOffset - 1 - blueMoving.getFullVisualLength(),45 - length * 3);
-        blueMoving.setA(0);
+        Renderer.get().render(secondMoving,leftOffset - 1 - secondMoving.getFullVisualLength(),45 - length * 3);
+        secondMoving.setA(0);
+
+        Renderer.get().render(winChanceFirstTxt,leftOffset - 1 - winChanceFirstTxt.getFullVisualLength(),45 - length * 3.5f);
+        Renderer.get().render(winChanceSecondTxt,leftOffset - 1 - winChanceSecondTxt.getFullVisualLength(),45 - length * 4f);
 
         Line base = new Line(new Vector2f(leftOffset, 45 - length * 2),90,length,0.25f, Line.Type.CENTER).setRGBA(1,0,0,1);
         lineList.add(base);
@@ -294,17 +302,6 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
     @Override
     public void onPlayerMove(Position move) {
         //this ensures that the minimum duration between turns is kept and that no turn is made to early
-        switch (gameState.getSideToMove().invert()){
-            case RED -> {
-                blueMoving.setA(0);
-                redMoving.setA(1);
-            }
-            case BLUE -> {
-                blueMoving.setA(1);
-                redMoving.setA(0);
-            }
-        }
-
         long deltaRun = System.currentTimeMillis() - last_time_run;
         if(deltaRun <= MIN_TIME_PER_TURN) {
             try {
@@ -326,6 +323,11 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
             //Renderer.get().render(obj, ((float) (move.row()) / 2 + move.column()) * scale + leftOffset, (float) ((GameState.BOARD_SIZE - move.row()) * 1.5 * scale));
         //}
         last_time_run = System.currentTimeMillis();
+    }
+
+    @Override
+    public void onPlayerPreMove(Player player) {
+        setMoving(player);
     }
 
     @KeyHandler("LMB")
@@ -372,10 +374,15 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
 
         playerList.clear();
 
-        blueMoving.setA(0);
-        redMoving.setA(0);
+        secondMoving.setA(0);
+        firstMoving.setA(0);
         sideChanged.setA(0);
         running = true;
+
+        firstChance.setA(0);
+        winChanceFirstTxt.setA(0);
+        secondChance.setA(0);
+        winChanceSecondTxt.setA(0);
 
         HIDInput.deactivateListener(this);
     }
@@ -397,21 +404,22 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
         return running;
     }
 
-    public void setMoving(Piece.Color color) {
-        switch (color) {
-            case RED:
-                blueMoving.setA(0.0f);
-                redMoving.setA(1.0f);
-                break;
-            case BLUE:
-                redMoving.setA(0.0f);
-                blueMoving.setA(1.0f);
-                break;
+    public void setMoving(Player player) {
+        if(player == playerA) {
+            secondMoving.setA(0.0f);
+            firstMoving.setA(1.0f);
+        }else{
+            firstMoving.setA(0.0f);
+            secondMoving.setA(1.0f);
         }
     }
 
     @Override
-    public void onWinChangeChange(Player player, double newChange) {
-
+    public void onWinChanceChange(Player player, double newChange) {
+        if(player == playerA) {
+            firstChance.update(String.valueOf(Math.round(newChange * 100)));
+        } else if (player == playerB) {
+            secondChance.update(String.valueOf(Math.round(newChange * 100)));
+        }
     }
 }

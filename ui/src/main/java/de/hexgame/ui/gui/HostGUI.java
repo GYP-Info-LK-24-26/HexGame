@@ -13,10 +13,8 @@ public class HostGUI extends GUI {
     public HostGUI() {
         GUIManager.setGUI(this);
 
-        TextField hostField = new TextField(new Vector2f(35,35),new Vector2f(5,1));
+        TextField hostField = new TextField(new Vector2f(35,35),new Vector2f(5,1)).addBackground(0x0000FFFF,0x00FFFFFF).addLabel(Text.translatable("port"));
         addTextField(hostField);
-        Polygon polygon = new Polygon(new Vector2f(35,35),new Vector2f(40,35),new Vector2f(40,36),new Vector2f(35,36)).setRGBA(0,0,1,1);
-        render(polygon);
 
         Button button = new  Button(new Vector2f(35,33),new Vector2f(5,1));
         addButton(button);

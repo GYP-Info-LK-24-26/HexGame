@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class PlayGUI extends GUI {
-    private static final int DIFFICULTIES = 5;
+    private static final int DIFFICULTIES = 6;
     private List<Class<? extends Player>> playerList;
     private List<Text> firstTexts;
     private List<Text> secondTexts;
@@ -131,7 +131,7 @@ public class PlayGUI extends GUI {
                     Game game = new Game(first, second);
                     UIGameBoard.get().init(game,first,second);
                     if(withRemote){
-                        game.getGameState().addPlayerMoveListener(new BoardChangeListenerS2C());
+                        game.addPlayerMoveListener(new BoardChangeListenerS2C());
                         game.addPlayerWinListener(new GameEndS2C());
                     }
                     game.addPlayerWinListener(player -> new WinGUI(player.getName()));
