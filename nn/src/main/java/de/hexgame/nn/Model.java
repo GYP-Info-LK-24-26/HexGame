@@ -23,7 +23,6 @@ import org.nd4j.linalg.api.memory.enums.ResetPolicy;
 import org.nd4j.linalg.api.memory.enums.SpillPolicy;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.MultiDataSet;
-import org.nd4j.linalg.dataset.api.iterator.MultiDataSetIterator;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.indexing.NDArrayIndex;
 import org.nd4j.linalg.learning.config.Adam;
@@ -140,8 +139,10 @@ public class Model extends Thread {
         return task.future;
     }
 
-    public void fit(MultiDataSetIterator dataSetIterator, int numEpochs) {
-        computationGraph.fit(dataSetIterator, numEpochs);
+    public void fit(MultiDataSet dataSet, int numEpochs) {
+        for (int i = 0; i < numEpochs; i++) {
+            computationGraph.fit(dataSet);
+        }
     }
 
     @SneakyThrows
