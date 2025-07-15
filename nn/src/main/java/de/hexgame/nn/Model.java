@@ -68,22 +68,36 @@ public class Model extends Thread {
         config.addLayer("policyConv", new ConvolutionLayer.Builder(1, 1)
                         .nOut(2)
                         .convolutionMode(ConvolutionMode.Same)
-                        .activation(Activation.RELU)
+                        .activation(Activation.IDENTITY)
                         .build(), inName)
+                .addLayer("policyNorm", new BatchNormalization.Builder()
+                        .nOut(2)
+                        .activation(Activation.IDENTITY)
+                        .build(), "policyConv")
+                .addLayer("policyRelu", new ActivationLayer.Builder()
+                        .activation(Activation.RELU)
+                        .build(), "policyNorm")
                 .addLayer("policyOut", new OutputLayer.Builder(LossFunctions.LossFunction.MCXENT)
                         .nOut(BOARD_SIZE * BOARD_SIZE)
                         .activation(Activation.SOFTMAX)
-                        .build(), "policyConv")
+                        .build(), "policyRelu")
 
                 .addLayer("valueConv", new ConvolutionLayer.Builder(1, 1)
                         .nOut(1)
                         .convolutionMode(ConvolutionMode.Same)
-                        .activation(Activation.RELU)
+                        .activation(Activation.IDENTITY)
                         .build(), inName)
+                .addLayer("valueNorm", new BatchNormalization.Builder()
+                        .nOut(2)
+                        .activation(Activation.IDENTITY)
+                        .build(), "valueConv")
+                .addLayer("valueRelu", new ActivationLayer.Builder()
+                        .activation(Activation.RELU)
+                        .build(), "valueNorm")
                 .addLayer("valueFC", new DenseLayer.Builder()
                         .nOut(128)
                         .activation(Activation.RELU)
-                        .build(), "valueConv")
+                        .build(), "valueRelu")
                 .addLayer("valueOut", new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
                         .nOut(1)
                         .activation(Activation.TANH)
@@ -101,7 +115,7 @@ public class Model extends Thread {
         String actName = "relu_" + blockName;
 
         config.addLayer(convName, new ConvolutionLayer.Builder(3, 3).nOut(64).convolutionMode(ConvolutionMode.Same).activation(Activation.IDENTITY).build(), inName);
-        config.addLayer(bnName, new BatchNormalization.Builder().nOut(64).build(), convName);
+        config.addLayer(bnName, new BatchNormalization.Builder().activation(Activation.IDENTITY).nOut(64).build(), convName);
         if (useActivation) {
             config.addLayer(actName, new ActivationLayer.Builder().activation(Activation.RELU).build(), bnName);
             return actName;
