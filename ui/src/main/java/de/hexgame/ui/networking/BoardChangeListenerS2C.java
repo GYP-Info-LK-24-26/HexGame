@@ -1,6 +1,7 @@
 package de.hexgame.ui.networking;
 
 import de.hexgame.logic.Piece;
+import de.hexgame.logic.Player;
 import de.hexgame.logic.PlayerMoveListener;
 import de.hexgame.logic.Position;
 import de.hexgame.ui.UIGameBoard;
@@ -16,6 +17,11 @@ public class BoardChangeListenerS2C implements PlayerMoveListener{
         buf.writeInt(move.getIndex());
         buf.writeEnum(UIGameBoard.get().getGameState().getPiece(move).getColor());
         HexServer.sendToEveryone("boardChange",buf);
+    }
+
+    @Override
+    public void onPlayerPreMove(Player player) {
+
     }
 
     public enum ChangeState{

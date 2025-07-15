@@ -13,22 +13,25 @@ public class GameTree {
     private TreeNode root;
     @Getter
     private final ExecutorService dispatcher = Executors.newSingleThreadExecutor();
+    private final boolean useNoise;
 
-    public GameTree(GameState gameState) {
+    public GameTree(GameState gameState, boolean useNoise) {
         root = new TreeNode(null, null, gameState);
+        this.useNoise = useNoise;
     }
 
     public void jumpTo(GameState gameState) {
-        root = root.jumpTo(gameState);
-        if (root != null) {
-            root.addDirichletNoise(); // FIXME: Could add noise multiple times
-        } else {
-            root = new TreeNode(null, null, gameState);
+        TreeNode newRoot = root.jumpTo(gameState);
+        if (newRoot == null) {
+            newRoot = new TreeNode(null, null, gameState.clone());
+        } else if (useNoise && newRoot.getVisits() > 0) {
+            newRoot.addDirichletNoise();
         }
+        root = newRoot;
     }
 
-    public CompletableFuture<Void> expand(Model model, Executor dispatcher, boolean addNoise) {
-        return root.expand(model, dispatcher, addNoise);
+    public CompletableFuture<Void> expand(Model model, Executor dispatcher) {
+        return root.expand(model, dispatcher, useNoise);
     }
 
     public Model.Output getCombinedOutput() {

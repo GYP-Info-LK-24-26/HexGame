@@ -20,6 +20,8 @@ public class Game implements Runnable {
     private List<PlayerWinListener> listeners;
     private List<WinChanceChangeListener> winChanceChangeListeners;
     private Thread runningThread;
+    //keeps track of every listener hook
+    private List<PlayerMoveListener> playerMoveListeners;
 
     /**
      * Converts this into a thread, calling this method on the same object will always yield the same thread<br>
@@ -31,6 +33,14 @@ public class Game implements Runnable {
         return runningThread;
     }
 
+    /**
+     * this adds a listener for player moves
+     * @param playerMoveListener the listener
+     */
+    public void addPlayerMoveListener(PlayerMoveListener playerMoveListener) {
+        if(playerMoveListeners != null)playerMoveListeners.add(playerMoveListener);
+    }
+
     public Game(GameState gameState, Player playerA, Player playerB) {
         this.gameState = gameState;
         this.playerA = playerA;
@@ -38,6 +48,7 @@ public class Game implements Runnable {
 
         listeners = new ArrayList<>();
         winChanceChangeListeners = new ArrayList<>();
+        playerMoveListeners = new ArrayList<>();
     }
 
     public Game(Player playerA, Player playerB) {
@@ -47,6 +58,7 @@ public class Game implements Runnable {
 
         listeners = new ArrayList<>();
         winChanceChangeListeners = new ArrayList<>();
+        playerMoveListeners = new ArrayList<>();
     }
 
     public void addPlayerWinListener(PlayerWinListener listener) {
@@ -65,6 +77,8 @@ public class Game implements Runnable {
         double otherPlayerChance = 0.0;
 
         while (!gameState.isFinished()) {
+            Player finalPlayerToMove = playerToMove;
+            playerMoveListeners.forEach(listener -> listener.onPlayerPreMove(finalPlayerToMove));
             Move move = playerToMove.think(gameState);
             if (!gameState.isLegalMove(move)) {
                 throw new IllegalStateException(
@@ -72,12 +86,13 @@ public class Game implements Runnable {
                 );
             }
             gameState.makeMove(move);
+            playerMoveListeners.forEach(listeners -> listeners.onPlayerMove(move.targetHexagon()));
+            if(playerToMoveChance != move.winChance())winChanceChangeListeners.forEach(listeners -> listeners.onWinChanceChange(finalPlayerToMove,move.winChance()));
+
+
             Player tempPlayer = playerToMove;
             playerToMove = otherPlayer;
             otherPlayer = tempPlayer;
-
-            final Player player = playerToMove;
-            if(playerToMoveChance != move.winChance())winChanceChangeListeners.forEach(listeners -> listeners.onWinChangeChange(player,move.winChance()));
 
             playerToMoveChance = otherPlayerChance;
             otherPlayerChance = move.winChance();

@@ -19,7 +19,7 @@ public class WinGUI extends GUI {
 
         Button btn = new Button(new Vector2f(60,38),new Vector2f(5,2));
         addButton(btn);
-        render(Text.translatable("Main menu"),60,38);
+        render(Text.translatable("main_menu"),60,38);
         btn.addListener(new ButtonClickEvent() {
             @Override
             public void clicked(MouseButton button) {

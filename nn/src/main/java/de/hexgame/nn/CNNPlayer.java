@@ -5,22 +5,19 @@ import de.hexgame.logic.Move;
 import de.hexgame.logic.Player;
 import de.hexgame.logic.Position;
 import de.hexgame.nn.mcts.GameTree;
+import de.hexgame.nn.training.GameData;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.ops.transforms.Transforms;
 
 import java.io.File;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
-
-import static de.hexgame.logic.GameState.BOARD_SIZE;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Slf4j
 public class CNNPlayer implements Player {
-    private static final File DEFAULT_MODEL_FILE = new File("training-data/model-1.zip");
+    private static final File DEFAULT_MODEL_FILE = new File("model.zip");
     private static final int SIMULATION_COUNT = 400;
 
     private static int INSTANCE_COUNTER = 0;
@@ -42,7 +39,7 @@ public class CNNPlayer implements Player {
     public CNNPlayer(Model model, GameData gameData) {
         name = String.format("CNN Player %d", ++INSTANCE_COUNTER);
         this.model = model;
-        gameTree = new GameTree(new GameState());
+        gameTree = new GameTree(new GameState(), gameData != null);
         this.gameData = gameData;
     }
 
@@ -54,7 +51,6 @@ public class CNNPlayer implements Player {
     @SneakyThrows
     @Override
     public Move think(GameState gameState) {
-        gameState = gameState.cloneWithoutListeners();
         startedSimulations = finishedSimulations = 0;
 
         gameTree.jumpTo(gameState);
@@ -63,32 +59,51 @@ public class CNNPlayer implements Player {
             expandGameTree();
         }
 
+        // Execute tasks until all simulations are finished
         while (finishedSimulations < SIMULATION_COUNT) {
             taskQueue.take().run();
         }
 
         Model.Output output = gameTree.getCombinedOutput();
-        float[] logitsJvm = output.policy();
-        for (int i = 0; i < BOARD_SIZE * BOARD_SIZE; i++) {
-            if (!gameState.isLegalMove(new Move(new Position(i)))) {
-                logitsJvm[i] = -1e10f;
+        float[] policy = output.policy();
+        int targetIndex = gameState.getLegalMoves().getFirst().getIndex();
+        // Check if collecting training data
+        if (gameData == null) {
+            // Select best move
+            float maxValue = 0.0f;
+            for (int i = 0; i < policy.length; i++) {
+                if (policy[i] > maxValue) {
+                    maxValue = policy[i];
+                    targetIndex = i;
+                }
             }
-        }
-        try (INDArray logits = Nd4j.createFromArray(logitsJvm)) {
-            int targetIndex;
-            if (gameData == null) {
-                targetIndex = Nd4j.argMax(logits).getInt(0);
-            } else {
-                Transforms.softmax(logits, false);
-                targetIndex = Nd4j.choice(Nd4j.arange(logits.length()), logits, 1).getInt(0);
-                gameData.add(gameState.clone(), new Model.Output(logits.toFloatVector(), output.value()));
+        } else {
+            // Normalize policy
+            float sum = 0.0f;
+            for (float v : policy) {
+                sum += v;
             }
-            return new Move(new Position(targetIndex), output.value());
+            for (int i = 0; i < policy.length; i++) {
+                policy[i] /= sum;
+            }
+
+            // Sample random move based on policy
+            float randomValue = ThreadLocalRandom.current().nextFloat();
+            for (int i = 0; i < policy.length; i++) {
+                randomValue -= policy[i];
+                if (randomValue <= 0.0f) {
+                    targetIndex = i;
+                    break;
+                }
+            }
+            gameData.add(gameState.clone(), new Model.Output(policy, output.value()));
         }
+
+        return new Move(new Position(targetIndex), output.value());
     }
 
     private void expandGameTree() {
-        gameTree.expand(model, dispatcher, gameData != null)
+        gameTree.expand(model, dispatcher)
                 .thenRunAsync(() -> {
                     finishedSimulations++;
                     if (startedSimulations < SIMULATION_COUNT) {

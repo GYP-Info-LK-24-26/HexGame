@@ -1,5 +1,34 @@
 {
   "play": "play",
   "settings": "settings",
-  "quit": "quit"
+  "connect": "connect",
+  "host": "host",
+  "quit": "quit",
+
+  "first": "first",
+  "second": "second",
+  "color_change": "Color changed",
+  "first_chance": "1. Win Chance ",
+  "second_chance": "2. Win Chance ",
+
+  "connect_suc": "Connected successfully",
+  "connect_un": "Could not connect",
+
+  "start": "Start",
+
+  "con_interrupted": "Connection cloese",
+  "player_disCon": "Player Disonnected",
+
+  "won": "You won",
+  "player_won": "has won",
+
+  "main_menu": "Main menu",
+
+  "de.hexgame.ui.UIPlayer": "Local Player",
+  "de.hexgame.ui.networking.RemotePlayer": "Coop Player",
+  "de.hexgame.logic.RandomPlayer": "Random Player",
+
+  "save": "save",
+  "saved": "Saved",
+  "lang": "language"
 }
