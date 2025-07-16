@@ -32,13 +32,7 @@ public class AlgorithmPlayer implements Player {
 
     public Position start(double movesToCalculate) {
         Position temp;
-        if (movesToCalculate == 1) {temp = calculate.bestPosition();}
-        else if (movesToCalculate == 2){temp = calculate.bestPositionIn2();}
-        else if (movesToCalculate == 2.5){temp = calculate.bestPositionIn2AndAHalf();}
-        else if (movesToCalculate == 3){temp = calculate.bestPositionIn3();}
-        else if (movesToCalculate == 4){temp = calculate.betterAlgorithm();}
-        else if (movesToCalculate == 5){temp = calculate.betterAlgorithmIn2();}
-        else {temp = calculate.longRowAlgorithm();}
+        temp = calculate.longRowAlgorithm();
         return temp;
     }
 
