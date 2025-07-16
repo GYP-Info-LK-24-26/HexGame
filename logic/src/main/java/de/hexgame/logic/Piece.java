@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Objects;
+
 @AllArgsConstructor
 @Getter
 @Setter
@@ -41,5 +43,10 @@ public class Piece implements Cloneable {
         if (o == null || getClass() != o.getClass()) return false;
         Piece piece = (Piece) o;
         return color == piece.color;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(color);
     }
 }

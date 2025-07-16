@@ -37,4 +37,8 @@ public class GameTree {
     public Model.Output getCombinedOutput() {
         return root.getCombinedOutput();
     }
+
+    public void print() {
+        root.print("", "");
+    }
 }

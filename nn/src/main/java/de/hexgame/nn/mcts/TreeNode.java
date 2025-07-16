@@ -7,6 +7,7 @@ import lombok.Getter;
 import org.apache.commons.math3.distribution.GammaDistribution;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -78,7 +79,7 @@ public class TreeNode {
 
     public CompletableFuture<Void> expand(Model model, Executor dispatcher, boolean addNoise) {
         visits++;
-        valueSum -= VIRTUAL_LOSS;
+        valueSum += VIRTUAL_LOSS;
         if (visits == 1 && move != null) {
             gameState = gameState.clone();
             gameState.makeMove(move);
@@ -109,7 +110,7 @@ public class TreeNode {
     }
 
     private void backpropagate(float eval) {
-        valueSum += eval + VIRTUAL_LOSS;
+        valueSum += eval - VIRTUAL_LOSS;
         if (parent != null) {
             parent.backpropagate(-eval);
         }
@@ -140,5 +141,18 @@ public class TreeNode {
             policy[child.move.getIndex()] = child.visits;
         }
         return new Model.Output(policy, getMeanValue());
+    }
+
+    public void print(String prefix, String childrenPrefix) {
+        System.out.println(prefix + gameState.hashCode());
+        for (Iterator<TreeNode> it = children.iterator(); it.hasNext(); ) {
+            TreeNode next = it.next();
+            if (next.getVisits() == 0) continue;
+            if (it.hasNext()) {
+                next.print(childrenPrefix + "|-- ", childrenPrefix + "|   ");
+            } else {
+                next.print(childrenPrefix + "--- ", childrenPrefix + "    ");
+            }
+        }
     }
 }
