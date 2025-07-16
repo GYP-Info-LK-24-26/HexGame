@@ -91,7 +91,7 @@ public class CNNPlayer implements Player {
             float randomValue = ThreadLocalRandom.current().nextFloat();
             for (int i = 0; i < policy.length; i++) {
                 randomValue -= policy[i];
-                if (randomValue <= 0.0f) {
+                if (randomValue <= 1e-10f) {
                     targetIndex = i;
                     break;
                 }
