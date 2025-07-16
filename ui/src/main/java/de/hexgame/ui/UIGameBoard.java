@@ -49,12 +49,14 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
     private Text sideChanged = Text.translatable("color_change").setColor(1,1,0).setA(0.0f).update();
     private Text winChanceRed = Text.literal("");
     private Text winChanceBlue = Text.literal("");
+    private List<Float> rightBounds;
 
     private UIGameBoard() {
         lineList = new ArrayList<>();
         cornerList = new ArrayList<>();
         hexagonList = new ArrayList<>();
         playerList = new ArrayList<>();
+        rightBounds = new ArrayList<>();
     }
 
     /**
@@ -117,6 +119,9 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
         Line base = new Line(new Vector2f(leftOffset, 45 - length * 2),90,length,0.25f, Line.Type.CENTER).setRGBA(1,0,0,1);
         lineList.add(base);
         Renderer.get().render(base);
+        rightBounds.add(leftOffset);
+        leftOffset = base.getEnd().x;
+        scale = (float) (length * Math.cos(Math.toRadians(30))) * 2;
 
         for (int i = 0; i < GameState.BOARD_SIZE; i++) {
             Line topLeft = base.cloneFromEnd(30, length, 0.25f, Line.Type.CENTER).setRGBA(0,0,1,1);
@@ -132,6 +137,7 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
             Line baseCPY = topRight.cloneFromEnd(-90,length,0.25f, Line.Type.CENTER);
             lineList.add(baseCPY);
             Renderer.get().render(baseCPY);
+            rightBounds.add(baseCPY.getOrg().x);
 
             Line botRight = baseCPY.cloneFromEnd(-150, length, 0.25f, Line.Type.CENTER);
             lineList.add(botRight);
@@ -332,6 +338,7 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
     public void lmb(boolean pressed,double x,double y){
         if(!pressed)return;
         Position pos = Util.convertToGameCords(x, y);
+        if(!pos.isValid())return;
         Move move = new Move(pos);
         if(isRemote){
             PacketByteBuf buf = PacketByteBuf.create();
@@ -413,5 +420,9 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
     @Override
     public void onWinChangeChange(Player player, double newChange) {
 
+    }
+
+    public List<Float> getRightBounds() {
+        return rightBounds;
     }
 }

@@ -6,34 +6,20 @@ import de.hexgame.logic.Position;
 public class Util {
 
     public static Position convertToGameCords(double x, double y) {
+        double yDelta = UIGameBoard.get().getRightBounds().get(1) - UIGameBoard.get().getRightBounds().get(0);
+        y = (y - UIGameBoard.get().getTopOffset()) / UIGameBoard.get().getyScale();
+        int yRow = GameState.BOARD_SIZE - (int) Math.floor(y) - 1;
+
+        int start = 0;
+        double xCPY = x - yRow * UIGameBoard.get().getScale() / 2.0f;//1.8675
+        while (UIGameBoard.get().getRightBounds().get(start) < xCPY)start++;
+        start--;
         x -= UIGameBoard.get().getLeftOffset();
         x /= UIGameBoard.get().getScale();
-        y = (y - UIGameBoard.get().getTopOffset()) / UIGameBoard.get().getyScale();
+
         boolean tip = y - Math.floor(y) >= 0.65;
+        if(tip)return new Position(-1,-1);
 
-        int yRow = GameState.BOARD_SIZE - (int) Math.floor(y) - 1;
-        int xRow = (int) Math.floor(x - (double) yRow / 2 + 0.02);
-        double deltaY = y - Math.floor(y);
-        double deltaX = (x - (double) yRow / 2 + 0.3) - Math.floor((x - (double) yRow / 2 + 0.3));
-        double delta = deltaY - deltaX;
-        double xVal = deltaX; //(deltaX - 0.5) / 0.5;
-        double yVal = deltaY; //(0.35 - (deltaY - 0.65)) / 0.35;
-        //((0.35 - (deltaY - 0.65)) <= (-0.5 + deltaX) * 2/3)
-        if(tip){
-            if(deltaX > 0.6 && yVal > -0.6*(xVal - 0.5) + 0.95){
-                yRow--;
-                xRow = (int) Math.floor(x - (double) yRow / 2 + 0.02);
-            } else if(deltaX < 0.6 && yVal > 0.6*(xVal - 0.5) + 0.85){
-                yRow--;
-                xRow = (int) Math.floor(x - (double) yRow / 2 + 0.02);
-            }
-        }
-
-        /*if((yRow & 0x1) == 1)xRow = (int) Math.floor(x - (double) yRow / 2 + 0.3);
-        else {
-            System.out.println(yRow + "," + (x - (double) yRow / 2 + 0.3));
-
-        }*/
-        return new Position(yRow, xRow);
+        return new Position(yRow, start);
     }
 }
