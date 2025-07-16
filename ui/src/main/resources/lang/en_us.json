@@ -27,8 +27,13 @@
   "de.hexgame.ui.UIPlayer": "Local Player",
   "de.hexgame.ui.networking.RemotePlayer": "Coop Player",
   "de.hexgame.logic.RandomPlayer": "Random Player",
+  "de.hexgame.algorithm.AlgorithmPlayer": "Algorithm",
+  "de.hexgame.algorithm.alphabeta.FinnAlgoPlayer": "FAlgorithm",
+  "de.hexgame.nn.CNNPlayer": "AI",
 
   "save": "save",
   "saved": "Saved",
-  "lang": "language"
+  "lang": "language",
+
+  "re_run": "Play again"
 }

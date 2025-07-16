@@ -22,6 +22,7 @@ public class Game implements Runnable {
     private Thread runningThread;
     //keeps track of every listener hook
     private List<PlayerMoveListener> playerMoveListeners;
+    private boolean terminated = false;
 
     /**
      * Converts this into a thread, calling this method on the same object will always yield the same thread<br>
@@ -76,7 +77,7 @@ public class Game implements Runnable {
         double playerToMoveChance = 0.0;
         double otherPlayerChance = 0.0;
 
-        while (!gameState.isFinished()) {
+        while (!gameState.isFinished() &&  !terminated) {
             Player finalPlayerToMove = playerToMove;
             playerMoveListeners.forEach(listener -> listener.onPlayerPreMove(finalPlayerToMove));
             Move move = playerToMove.think(gameState);
@@ -98,10 +99,19 @@ public class Game implements Runnable {
             otherPlayerChance = move.winChance();
         }
 
-        if(listeners.isEmpty()) System.out.printf("%s won!\n", otherPlayer.getName());
-        else{
-            final Player winner = otherPlayer;
-            listeners.forEach(listeners -> listeners.onPlayerWin(winner));
+        if(gameState.isFinished()) {
+            if (listeners.isEmpty()) System.out.printf("%s won!\n", otherPlayer.getName());
+            else {
+                final Player winner = otherPlayer;
+                listeners.forEach(listeners -> listeners.onPlayerWin(winner));
+            }
         }
+    }
+
+    /**
+     * This makes the Game stop upon receiving the next move, used to forcefully end the game
+     */
+    public void terminate() {
+        terminated = true;
     }
 }

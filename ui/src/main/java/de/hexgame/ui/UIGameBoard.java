@@ -51,6 +51,7 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
     private Text winChanceFirstTxt = Text.translatable("first_chance").append(firstChance);
     private Text secondChance = Text.literal("");
     private Text winChanceSecondTxt = Text.translatable("second_chance").append(secondChance);
+    private Game game = null;
 
     private UIGameBoard() {
         lineList = new ArrayList<>();
@@ -64,6 +65,7 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
      * @param game the game to connect
      */
     public void init(Game game,Player playerA,Player playerB) {
+        this.game = game;
         game.addPlayerMoveListener(this);
         game.addWinChanceChangeListener(this);
         this.gameState = game.getGameState();
@@ -124,6 +126,7 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
 
         Line base = new Line(new Vector2f(leftOffset, 45 - length * 2),90,length,0.25f, Line.Type.CENTER).setRGBA(1,0,0,1);
         lineList.add(base);
+        leftOffset = base.getEnd().x;
         Renderer.get().render(base);
 
         for (int i = 0; i < GameState.BOARD_SIZE; i++) {
@@ -311,6 +314,7 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
             }
         }
         Polygon hex = hexagonList.get(move.getIndex());
+        System.out.println(move);
         if(gameState.getPiece(move).getColor() == Piece.Color.RED)hex.setRGBA(1,0,0,1);
         else hex.setRGBA(0,0,1,1);
         //Renderer.get().render(hex);
@@ -363,6 +367,10 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
         return topOffset;
     }
 
+    public boolean isRemote() {
+        return isRemote;
+    }
+
     public float getyScale() {
         return yScale;
     }
@@ -388,8 +396,17 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
     }
 
     public void forceEnd(){
-        HexClient.forceStop();
-        HexServer.forceStop();
+        try {
+            if(game != null) {
+                game.terminate();
+                game.asThread().join();
+            }
+            HexClient.forceStop();
+            HexServer.forceStop();
+            game = null;
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public GameState getGameState() {
@@ -421,5 +438,13 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
         } else if (player == playerB) {
             secondChance.update(String.valueOf(Math.round(newChange * 100)));
         }
+    }
+
+    public Player getPlayerA() {
+        return playerA;
+    }
+
+    public Player getPlayerB() {
+        return playerB;
     }
 }

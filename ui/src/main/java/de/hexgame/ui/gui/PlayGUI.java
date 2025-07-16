@@ -70,9 +70,8 @@ public class PlayGUI extends GUI {
         difSelectorSecond = new Line(new Vector2f(39.75f,30 - playerList.size() * 4),0,0.5f,1, Line.Type.CENTER);
         render(difSelectorSecond);
 
-        Button startBtn = new Button(new Vector2f(36,34),new Vector2f(1,4));
+        Button startBtn = new Button(new Vector2f(36,34),Text.translatable("start").setColor(0,1,0));
         addButton(startBtn);
-        render(Text.translatable("start").setColor(0,1,0),36,34);
         startBtn.addListener(new ButtonClickEvent() {
             @Override
             public void clicked(MouseButton button) {
@@ -152,8 +151,7 @@ public class PlayGUI extends GUI {
             final int id = i;
 
             Text firstText = Text.translatable(playerList.get(i).getName()).setColor(0,1,0);
-            render(firstText,30,30 - i * 4);
-            Button first = new Button(new Vector2f(30,30 - i * 4),new Vector2f(5,1));
+            Button first = new Button(new Vector2f(30,30 - i * 4),firstText);
             addButton(first);
             first.addListener(new ButtonClickEvent() {
                 @Override
@@ -166,8 +164,7 @@ public class PlayGUI extends GUI {
             firstTexts.add(firstText);
 
             Text secondText = Text.translatable(playerList.get(i).getName()).setColor(0,1,0);
-            render(secondText,40,30 - i * 4);
-            Button second = new Button(new Vector2f(40,30 - i * 4),new Vector2f(5,1));
+            Button second = new Button(new Vector2f(40,30 - i * 4),secondText);
             addButton(second);
             second.addListener(new ButtonClickEvent() {
                 @Override

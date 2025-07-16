@@ -21,9 +21,8 @@ public class ConnectGUI extends GUI {
         TextField nameField = new TextField(new Vector2f(35,33),new Vector2f(10,1)).addBackground(0x0000FFFF,0x00FFFFFF).addLabel(Text.translatable("name"));
         addTextField(nameField);
 
-        Button button = new  Button(new Vector2f(35,31),new Vector2f(5,1));
+        Button button = new  Button(new Vector2f(35,31),Text.translatable("connect").setColor(0,1,0));
         addButton(button);
-        render(Text.translatable("connect").setColor(0,1,0),35,31);
 
         button.addListener(button1 -> {
             if(button1 != MouseButton.LMB)return;
@@ -35,14 +34,12 @@ public class ConnectGUI extends GUI {
     }
 
     public void connectedSuccessfully(){
-        Button button = new  Button(new Vector2f(35,29),new Vector2f(5,1));
+        Button button = new  Button(new Vector2f(35,29),Text.translatable("connect_suc").setColor(0,1,0));
         addButton(button);
-        render(Text.translatable("connect_suc").setColor(0,1,0),35,29);
     }
 
     public void notConnected(){
-        Button button = new  Button(new Vector2f(35,29),new Vector2f(5,1));
+        Button button = new  Button(new Vector2f(35,29),Text.translatable("connect_un").setColor(0,1,0));
         addButton(button);
-        render(Text.translatable("connect_un").setColor(0,1,0),35,29);
     }
 }

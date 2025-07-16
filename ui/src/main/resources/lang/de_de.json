@@ -24,11 +24,16 @@
 
   "main_menu": "Hauptmenü",
 
-  "de.hexgame.ui.UIPlayer": "Localer Spieler",
+  "de.hexgame.ui.UIPlayer": "Lokaler Spieler",
   "de.hexgame.ui.networking.RemotePlayer": "Coop Spieler",
   "de.hexgame.logic.RandomPlayer": "Zufallsspieler",
+  "de.hexgame.algorithm.AlgorithmPlayer": "Algorithm",
+  "de.hexgame.algorithm.alphabeta.FinnAlgoPlayer": "FAlgorithm",
+  "de.hexgame.nn.CNNPlayer": "AI",
 
   "save": "Speichern",
   "saved": "Gespeichert",
-  "lang": "Sprache"
+  "lang": "Sprache",
+
+  "re_run": "Wiederholen"
 }
