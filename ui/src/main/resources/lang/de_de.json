@@ -5,9 +5,11 @@
   "host": "Host",
   "quit": "Beenden",
 
-  "red": "rot",
-  "blue": "Blau",
+  "first": "Erster",
+  "second": "Zweiter",
   "color_change": "Farbwechsel",
+  "first_chance": "1. Chance ",
+  "second_chance": "2. Chance ",
 
   "connect_suc": "Verbunden",
   "connect_un": "Verbindung fehlgeschlagen",

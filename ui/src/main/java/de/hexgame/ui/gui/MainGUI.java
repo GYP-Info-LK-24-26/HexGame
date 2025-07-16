@@ -1,5 +1,6 @@
 package de.hexgame.ui.gui;
 
+import de.igelstudios.ClientMain;
 import de.igelstudios.igelengine.client.gui.Button;
 import de.igelstudios.igelengine.client.gui.GUI;
 import de.igelstudios.igelengine.client.gui.GUIManager;
@@ -35,7 +36,7 @@ public class MainGUI extends GUI {
         playBTN.addListener(e ->
                 new PlayGUI(false,null));
         settingsBTN.addListener(e -> new SettingsGUI());
-        quitBTN.addListener(e -> System.exit(0));
+        quitBTN.addListener(e -> ClientMain.getInstance().getEngine().stop());
         connectBTN.addListener(e -> new ConnectGUI());
         hostBTN.addListener(e -> new HostGUI());
     }

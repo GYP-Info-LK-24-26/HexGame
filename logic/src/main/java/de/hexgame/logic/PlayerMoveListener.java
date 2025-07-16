@@ -6,4 +6,5 @@ package de.hexgame.logic;
  */
 public interface PlayerMoveListener {
     void onPlayerMove(Position move);
+    void onPlayerPreMove(Player player);
 }

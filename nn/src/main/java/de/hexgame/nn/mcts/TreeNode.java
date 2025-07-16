@@ -3,12 +3,14 @@ package de.hexgame.nn.mcts;
 import de.hexgame.logic.GameState;
 import de.hexgame.logic.Move;
 import de.hexgame.nn.Model;
+import lombok.Getter;
 import org.apache.commons.math3.distribution.GammaDistribution;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static de.hexgame.logic.GameState.BOARD_SIZE;
 
@@ -23,6 +25,7 @@ public class TreeNode {
     private GameState gameState; // lazily evaluated
     private Model.Output modelOutput;
 
+    @Getter
     private int visits = 0;
     private float valueSum = 0.0f;
 
@@ -54,7 +57,7 @@ public class TreeNode {
     }
 
     public TreeNode jumpTo(GameState gameState) {
-        if (this.gameState.getHalfMoveCounter() >= gameState.getHalfMoveCounter()) {
+        if (this.gameState.getHalfMoveCounter() > gameState.getHalfMoveCounter()) {
             return null;
         }
 
@@ -117,7 +120,8 @@ public class TreeNode {
         TreeNode best = null;
 
         for (TreeNode child : children) {
-            final float prior = modelOutput == null ? 1.0f / (BOARD_SIZE * BOARD_SIZE) : modelOutput.policy()[child.move.getIndex()];
+            final float prior = modelOutput == null ? 1.0f / (BOARD_SIZE * BOARD_SIZE) + ThreadLocalRandom.current().nextFloat(1e-4f)
+                    : modelOutput.policy()[child.move.getIndex()];
             float value = (float) (-child.getMeanValue() +
                                 EXPLORATION_FACTOR * prior * Math.sqrt(visits) / (1 + child.visits));
             if (value > bestValue) {

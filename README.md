@@ -65,13 +65,26 @@ Ein grafisch und strategisch anspruchsvolles Brettspiel mit KI-Gegnern, entwicke
 ### Ordnerstruktur
 
 ```
-├── src/
-│   ├── main/
-│   │   ├── java/            # Spiel-Logik, KI, Engine-Anbindung
-│   │   └── resources/       # Texturen, Sounds, Konfigurationen
-│   └── test/                # Tests
-├── build.gradle
-├── settings.gradle
+├── algorithm/
+│   └── src/java             # Algorithm source
+│
+├── logic/
+│   ├── src/java             # Logic source
+│   └── build/docs           # java docs for logic
+│
+├── nn/
+│   └── src/java             # AI source
+│
+├── ui/
+│   ├── src
+│   │   ├── java             # UI source
+│   │   └── resources        # data files for UI(build info/textures)
+│   │
+│   └── IgelEngine
+│       ├── build/docs       # java docs for IgelEngine
+│       └── src
+│           ├── java             # IgelEngine source
+│           └── resources        # data files for IgelEngine(fonts/shaders)
 └── README.md
 ```
 
