@@ -18,7 +18,7 @@ public class ExperienceBuffer {
         dataSetBuffer = new CircularFifoQueue<>(size);
     }
 
-    public void load(File file) {
+    public synchronized void load(File file) {
         try {
             MultiDataSet dataSet = new org.nd4j.linalg.dataset.MultiDataSet();
             dataSet.load(file);
@@ -26,9 +26,10 @@ public class ExperienceBuffer {
         } catch (IOException e) {
             log.error("Error while loading experience buffer", e);
         }
+        log.info("Loaded {} experiences", dataSetBuffer.size());
     }
 
-    public void save(File file) {
+    public synchronized void save(File file) {
         try {
             org.nd4j.linalg.dataset.MultiDataSet.merge(dataSetBuffer).save(file);
         } catch (IOException e) {
@@ -36,16 +37,20 @@ public class ExperienceBuffer {
         }
     }
 
-    public void add(MultiDataSet dataSet) {
+    public synchronized void add(MultiDataSet dataSet) {
         dataSetBuffer.add(dataSet);
     }
 
-    public MultiDataSet sample(int count) {
+    public synchronized MultiDataSet sample(int count) {
         List<MultiDataSet> samples = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             int randomIndex = ThreadLocalRandom.current().nextInt(dataSetBuffer.size());
             samples.add(dataSetBuffer.get(randomIndex));
         }
         return org.nd4j.linalg.dataset.MultiDataSet.merge(samples);
+    }
+
+    public synchronized int size() {
+        return dataSetBuffer.size();
     }
 }

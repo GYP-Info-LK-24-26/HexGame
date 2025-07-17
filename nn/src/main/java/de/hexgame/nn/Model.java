@@ -14,9 +14,9 @@ import org.deeplearning4j.nn.conf.layers.*;
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.nd4j.linalg.activations.Activation;
-import org.nd4j.linalg.api.concurrency.AffinityManager;
 import org.nd4j.linalg.api.memory.MemoryWorkspace;
 import org.nd4j.linalg.api.memory.conf.WorkspaceConfiguration;
+import org.nd4j.linalg.api.memory.enums.AllocationPolicy;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.MultiDataSet;
 import org.nd4j.linalg.factory.Nd4j;
@@ -37,8 +37,10 @@ import static de.hexgame.logic.GameState.BOARD_SIZE;
 @SuppressWarnings("resource")
 public class Model extends Thread {
     private static final int NUM_INPUT_CHANNELS = 5;
-    private static final int BATCH_SIZE = 256;
+    private static final int BATCH_SIZE = 512;
     private static final WorkspaceConfiguration workspaceConfig = WorkspaceConfiguration.builder()
+            .initialSize(2L * 1024 * 1024)
+            .policyAllocation(AllocationPolicy.STRICT)
             .build();
     private static final String workspaceId = "model-gpu";
 
@@ -56,7 +58,7 @@ public class Model extends Thread {
         setDaemon(true);
         ComputationGraphConfiguration.GraphBuilder config = new NeuralNetConfiguration.Builder()
                 .activation(Activation.IDENTITY)
-                .weightInit(WeightInit.LECUN_NORMAL)
+                .weightInit(WeightInit.RELU)
                 .updater(new Adam(1e-3))
                 .weightDecay(1e-4)
                 .graphBuilder()
@@ -72,35 +74,39 @@ public class Model extends Thread {
                         .nOut(2)
                         .convolutionMode(ConvolutionMode.Same)
                         .build(), inName)
-                .addLayer("policyNorm", new BatchNormalization.Builder()
-                        .nOut(2)
-                        .build(), "policyConv")
+//                .addLayer("policyNorm", new BatchNormalization.Builder()
+//                        .build(), "policyConv")
                 .addLayer("policyRelu", new ActivationLayer.Builder()
                         .activation(Activation.RELU)
-                        .build(), "policyNorm")
+                        .build(), "policyConv")
                 .addLayer("policyOut", new OutputLayer.Builder(LossFunctions.LossFunction.MCXENT)
                         .nOut(BOARD_SIZE * BOARD_SIZE)
                         .activation(Activation.SOFTMAX)
+                        .weightInit(WeightInit.XAVIER)
                         .build(), "policyRelu")
 
                 .addLayer("valueConv", new ConvolutionLayer.Builder(1, 1)
                         .nOut(1)
                         .convolutionMode(ConvolutionMode.Same)
                         .build(), inName)
-                .addLayer("valueNorm", new BatchNormalization.Builder()
-                        .nOut(2)
-                        .build(), "valueConv")
+//                .addLayer("valueNorm", new BatchNormalization.Builder()
+//                        .build(), "valueConv")
                 .addLayer("valueRelu", new ActivationLayer.Builder()
                         .activation(Activation.RELU)
-                        .build(), "valueNorm")
+                        .build(), "valueConv")
                 .addLayer("valueFC", new DenseLayer.Builder()
                         .nOut(128)
-                        .activation(Activation.RELU)
                         .build(), "valueRelu")
+//                .addLayer("valueDenseNorm", new BatchNormalization.Builder()
+//                        .build(), "valueFC")
+                .addLayer("valueDenseRelu", new ActivationLayer.Builder()
+                        .activation(Activation.RELU)
+                        .build(), "valueFC")
                 .addLayer("valueOut", new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
                         .nOut(1)
                         .activation(Activation.TANH)
-                        .build(), "valueFC")
+                        .weightInit(WeightInit.XAVIER)
+                        .build(), "valueDenseRelu")
 
                 .setOutputs("policyOut", "valueOut");
 
@@ -114,25 +120,24 @@ public class Model extends Thread {
         String actName = "relu_" + blockName;
 
         config.addLayer(convName, new ConvolutionLayer.Builder(3, 3).nOut(64).convolutionMode(ConvolutionMode.Same).build(), inName);
-        config.addLayer(bnName, new BatchNormalization.Builder().nOut(64).build(), convName);
+       // config.addLayer(bnName, new BatchNormalization.Builder().nOut(64).build(), convName);
         if (useActivation) {
-            config.addLayer(actName, new ActivationLayer.Builder().activation(Activation.RELU).build(), bnName);
+            config.addLayer(actName, new ActivationLayer.Builder().activation(Activation.RELU).build(), convName);
             return actName;
         } else {
-            return bnName;
+            return convName;
         }
     }
 
     private String addResidualBlock(ComputationGraphConfiguration.GraphBuilder config, int blockNumber, String inName) {
         String firstBlock = "residual_1_" + blockNumber;
-        String firstOut = "relu_residual_1_" + blockNumber;
         String secondBlock = "residual_2_" + blockNumber;
         String mergeBlock = "add_" + blockNumber;
         String actBlock = "relu_" + blockNumber;
 
         String firstBnOut = addConvBatchNormBlock(config, firstBlock, inName, true);
-        String secondBnOut = addConvBatchNormBlock(config, secondBlock, firstOut, false);
-        config.addVertex(mergeBlock, new ElementWiseVertex(ElementWiseVertex.Op.Add), firstBnOut, secondBnOut);
+        String secondBnOut = addConvBatchNormBlock(config, secondBlock, firstBnOut, false);
+        config.addVertex(mergeBlock, new ElementWiseVertex(ElementWiseVertex.Op.Add), inName, secondBnOut);
         config.addLayer(actBlock, new ActivationLayer.Builder().activation(Activation.RELU).build(), mergeBlock);
         return actBlock;
     }
@@ -180,9 +185,6 @@ public class Model extends Thread {
     }
 
     private void extractFeatures(List<GameState> gameStates, INDArray featuresOut) {
-        INDArray ownPiecesHost = Nd4j.createUninitializedDetached(Nd4j.defaultFloatingPointType(), BOARD_SIZE, BOARD_SIZE);
-        INDArray enemyPiecesHost = Nd4j.createUninitializedDetached(Nd4j.defaultFloatingPointType(), BOARD_SIZE, BOARD_SIZE);
-
         for (int i = 0; i < gameStates.size(); i++) {
             final GameState gameState = gameStates.get(i);
 
@@ -190,10 +192,8 @@ public class Model extends Thread {
             INDArray enemyPieces = featuresOut.get(NDArrayIndex.point(i), NDArrayIndex.point(1));
             INDArray swapPossible = featuresOut.get(NDArrayIndex.point(i), NDArrayIndex.point(2));
 
-            Nd4j.getAffinityManager().tagLocation(ownPiecesHost, AffinityManager.Location.HOST);
-            Nd4j.getAffinityManager().tagLocation(enemyPiecesHost, AffinityManager.Location.HOST);
-            FloatBuffer fbOwn = ownPiecesHost.data().asNioFloat();
-            FloatBuffer fbEnemy = enemyPiecesHost.data().asNioFloat();
+            FloatBuffer fbOwn = ownPieces.data().asNioFloat();
+            FloatBuffer fbEnemy = enemyPieces.data().asNioFloat();
             for (int k = 0; k < fbOwn.capacity(); k++) {
                 fbOwn.put(k, 0f);
                 fbEnemy.put(k, 0f);
@@ -208,14 +208,11 @@ public class Model extends Thread {
                 int eqCol = equalizedIndex % BOARD_SIZE;
 
                 if (p.getColor() == gameState.getSideToMove()) {
-                    ownPiecesHost.putScalar(eqRow, eqCol, 1.0f);
+                    ownPieces.putScalar(eqRow, eqCol, 1.0f);
                 } else {
-                    enemyPiecesHost.putScalar(eqRow, eqCol, 1.0f);
+                    enemyPieces.putScalar(eqRow, eqCol, 1.0f);
                 }
             }
-
-            ownPieces.assign(ownPiecesHost);
-            enemyPieces.assign(enemyPiecesHost);
 
             if (gameState.getHalfMoveCounter() == 1) {
                 swapPossible.assign(1.0f);
@@ -268,6 +265,7 @@ public class Model extends Thread {
     @Override
     public void run() {
         final List<Task> tasks = new ArrayList<>();
+        final INDArray input = Nd4j.create(BATCH_SIZE, NUM_INPUT_CHANNELS, BOARD_SIZE, BOARD_SIZE);
         while (true) {
             try (MemoryWorkspace workspace = Nd4j.getWorkspaceManager().getAndActivateWorkspace(workspaceConfig, workspaceId)) {
                 try {
@@ -281,7 +279,6 @@ public class Model extends Thread {
                     log.info("Total task count: {}, Batch task count: {}", c, tasks.size());
                 }
                 c += tasks.size();
-                final INDArray input = Nd4j.create(tasks.size(), NUM_INPUT_CHANNELS, BOARD_SIZE, BOARD_SIZE);
                 extractFeatures(tasks.stream().map(Task::gameState).toList(), input);
                 final INDArray[] outputs = computationGraph.output(false, workspace, input);
                 final INDArray policies = outputs[0];

@@ -51,6 +51,7 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
     private Text winChanceFirstTxt = Text.translatable("first_chance").append(firstChance);
     private Text secondChance = Text.literal("");
     private Text winChanceSecondTxt = Text.translatable("second_chance").append(secondChance);
+    private Game game = null;
     private Text winChanceRed = Text.literal("");
     private Text winChanceBlue = Text.literal("");
     private List<Float> rightBounds;
@@ -68,6 +69,7 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
      * @param game the game to connect
      */
     public void init(Game game,Player playerA,Player playerB) {
+        this.game = game;
         game.addPlayerMoveListener(this);
         game.addWinChanceChangeListener(this);
         this.gameState = game.getGameState();
@@ -128,6 +130,7 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
 
         Line base = new Line(new Vector2f(leftOffset, 45 - length * 2),90,length,0.25f, Line.Type.CENTER).setRGBA(1,0,0,1);
         lineList.add(base);
+        leftOffset = base.getEnd().x;
         Renderer.get().render(base);
         rightBounds.add(leftOffset);
         leftOffset = base.getEnd().x;
@@ -342,7 +345,6 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
     public void lmb(boolean pressed,double x,double y){
         if(!pressed)return;
         Position pos = Util.convertToGameCords(x, y);
-        if(!pos.isValid())return;
         Move move = new Move(pos);
         if(isRemote){
             PacketByteBuf buf = PacketByteBuf.create();
@@ -372,6 +374,10 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
         return topOffset;
     }
 
+    public boolean isRemote() {
+        return isRemote;
+    }
+
     public float getyScale() {
         return yScale;
     }
@@ -397,8 +403,17 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
     }
 
     public void forceEnd(){
-        HexClient.forceStop();
-        HexServer.forceStop();
+        try {
+            if(game != null) {
+                game.terminate();
+                game.asThread().join();
+            }
+            HexClient.forceStop();
+            HexServer.forceStop();
+            game = null;
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public GameState getGameState() {
@@ -430,6 +445,14 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
         } else if (player == playerB) {
             secondChance.update(String.valueOf(Math.round(newChange * 100)));
         }
+    }
+
+    public Player getPlayerA() {
+        return playerA;
+    }
+
+    public Player getPlayerB() {
+        return playerB;
     }
 
     public List<Float> getRightBounds() {

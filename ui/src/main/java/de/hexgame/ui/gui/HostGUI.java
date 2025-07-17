@@ -16,9 +16,8 @@ public class HostGUI extends GUI {
         TextField hostField = new TextField(new Vector2f(35,35),new Vector2f(5,1)).addBackground(0x0000FFFF,0x00FFFFFF).addLabel(Text.translatable("port"));
         addTextField(hostField);
 
-        Button button = new  Button(new Vector2f(35,33),new Vector2f(5,1));
+        Button button = new  Button(new Vector2f(35,33),Text.translatable("start").setColor(0,1,0));
         addButton(button);
-        render(Text.translatable("start").setColor(0,1,0),35,33);
 
 
         button.addListener(button1 -> {

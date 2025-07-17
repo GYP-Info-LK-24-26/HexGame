@@ -15,8 +15,7 @@ public class SettingsGUI extends GUI {
         addTextField(lang);
 
 
-        Button save = new Button(new Vector2f(35,33),new Vector2f(5,1));
-        render(Text.translatable("save").setColor(0,1,0),35,33);
+        Button save = new Button(new Vector2f(35,33),Text.translatable("save").setColor(0,1,0));
         addButton(save);
 
         save.addListener(new ButtonClickEvent() {

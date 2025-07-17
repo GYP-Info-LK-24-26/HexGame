@@ -218,6 +218,11 @@ public class GameState implements Cloneable {
         return clone;
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(Arrays.hashCode(pieces), halfMoveCounter);
+    }
+
     public long hashCodeLong() {
         long h = 1;
         for (Piece p : pieces) {

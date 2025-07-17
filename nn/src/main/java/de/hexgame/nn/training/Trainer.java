@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Trainer implements Runnable {
     private static final int GAMES_PER_ITERATION = 100;
     private static final int EXPERIENCE_BUFFER_SIZE = 50_000;
-    private static final int BATCHES_PER_ITERATION = 500;
+    private static final int BATCHES_PER_ITERATION = 250;
     private static final File MODEL_FILE = new File("model.zip");
     private static final File EXPERIENCE_FILE = new File("experience.bin");
 
@@ -26,20 +26,22 @@ public class Trainer implements Runnable {
     @SneakyThrows
     @Override
     public void run() {
+        if (EXPERIENCE_FILE.exists()) {
+            experienceBuffer.load(EXPERIENCE_FILE);
+        }
         if (MODEL_FILE.exists()) {
             model = new Model(MODEL_FILE, true);
         } else {
             model = new Model();
-        }
-        if (EXPERIENCE_FILE.exists()) {
-            experienceBuffer.load(EXPERIENCE_FILE);
+            if (experienceBuffer.size() == EXPERIENCE_BUFFER_SIZE) {
+                fitModel();
+                model.save(MODEL_FILE);
+            }
         }
         model.start();
         while (true) {
-            log.info("Generating training data...");
             simulateGames();
             experienceBuffer.save(EXPERIENCE_FILE);
-            log.info("Fitting the model...");
             fitModel();
             model.save(MODEL_FILE);
         }
@@ -47,6 +49,7 @@ public class Trainer implements Runnable {
 
     @SneakyThrows
     private void simulateGames() {
+        log.info("Generating training data...");
         gameCounter.set(0);
         final int threadCount = GAMES_PER_ITERATION;
         Thread[] threads = new Thread[threadCount];
@@ -59,6 +62,7 @@ public class Trainer implements Runnable {
     }
 
     private void fitModel() {
+        log.info("Fitting the model...");
         model.fit(experienceBuffer, BATCHES_PER_ITERATION);
     }
 
@@ -71,10 +75,8 @@ public class Trainer implements Runnable {
         Player playerB = new CNNPlayer(model, gameDataB);
         Game game = new Game(gameState, playerA, playerB);
         game.addPlayerWinListener(winner -> {
-            synchronized (this) {
-                gameDataA.extractDataSets(winner == playerA, model, experienceBuffer::add);
-                gameDataB.extractDataSets(winner == playerB, model, experienceBuffer::add);
-            }
+            gameDataA.extractDataSets(winner == playerA, model, experienceBuffer::add);
+            gameDataB.extractDataSets(winner == playerB, model, experienceBuffer::add);
         });
 
         int gameNumber;
