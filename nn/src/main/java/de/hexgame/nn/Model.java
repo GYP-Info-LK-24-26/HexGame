@@ -185,6 +185,8 @@ public class Model extends Thread {
     }
 
     private void extractFeatures(List<GameState> gameStates, INDArray featuresOut) {
+        featuresOut.assign(0.0f);
+
         for (int i = 0; i < gameStates.size(); i++) {
             final GameState gameState = gameStates.get(i);
 
