@@ -5,27 +5,22 @@ import de.hexgame.logic.Piece;
 import de.hexgame.nn.training.ExperienceBuffer;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.deeplearning4j.nn.conf.ComputationGraphConfiguration;
-import org.deeplearning4j.nn.conf.ConvolutionMode;
-import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
-import org.deeplearning4j.nn.conf.graph.ElementWiseVertex;
-import org.deeplearning4j.nn.conf.inputs.InputType;
-import org.deeplearning4j.nn.conf.layers.*;
-import org.deeplearning4j.nn.graph.ComputationGraph;
-import org.deeplearning4j.nn.weights.WeightInit;
-import org.nd4j.linalg.activations.Activation;
-import org.nd4j.linalg.api.memory.MemoryWorkspace;
-import org.nd4j.linalg.api.memory.conf.WorkspaceConfiguration;
-import org.nd4j.linalg.api.memory.enums.AllocationPolicy;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.dataset.MultiDataSet;
-import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.indexing.NDArrayIndex;
-import org.nd4j.linalg.learning.config.Adam;
-import org.nd4j.linalg.lossfunctions.LossFunctions;
+import org.tensorflow.*;
+import org.tensorflow.framework.optimizers.Momentum;
+import org.tensorflow.framework.optimizers.Optimizer;
+import org.tensorflow.ndarray.BooleanNdArray;
+import org.tensorflow.ndarray.Shape;
+import org.tensorflow.op.Ops;
+import org.tensorflow.op.core.Placeholder;
+import org.tensorflow.op.core.Variable;
+import org.tensorflow.op.nn.Conv2d;
+import org.tensorflow.op.nn.FusedBatchNorm;
+import org.tensorflow.proto.data.Dataset;
+import org.tensorflow.types.TBool;
+import org.tensorflow.types.TFloat32;
 
+import java.io.Closeable;
 import java.io.File;
-import java.nio.FloatBuffer;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
@@ -34,112 +29,100 @@ import java.util.concurrent.LinkedBlockingQueue;
 import static de.hexgame.logic.GameState.BOARD_SIZE;
 
 @Slf4j
-@SuppressWarnings("resource")
-public class Model extends Thread {
+public class Model extends Thread implements Closeable {
+    private static final String PADDING_TYPE = "SAME";
+    private static final String TRAIN = "train";
+    private static final int CHANNELS = 64;
     private static final int NUM_INPUT_CHANNELS = 5;
     private static final int BATCH_SIZE = 512;
-    private static final WorkspaceConfiguration workspaceConfig = WorkspaceConfiguration.builder()
-            .initialSize(2L * 1024 * 1024)
-            .policyAllocation(AllocationPolicy.STRICT)
-            .build();
-    private static final String workspaceId = "model-gpu";
-
-    private final ComputationGraph computationGraph;
+    static long c = 0;
+    static long lastPrintTime = 0;
+    private final Graph graph;
+    private final Session session;
     private final Map<GameState, Output> cache = Collections.synchronizedMap(new WeakHashMap<>());
     private final BlockingQueue<Task> taskQueue = new LinkedBlockingQueue<>();
 
     @SneakyThrows
     public Model(File file, boolean loadUpdater) {
         setDaemon(true);
-        computationGraph = ComputationGraph.load(file, loadUpdater);
+        SavedModelBundle modelBundle = SavedModelBundle.load(file.getAbsolutePath());
+        graph = modelBundle.graph();
+        session = modelBundle.session();
     }
 
     public Model() {
         setDaemon(true);
-        ComputationGraphConfiguration.GraphBuilder config = new NeuralNetConfiguration.Builder()
-                .activation(Activation.IDENTITY)
-                .weightInit(WeightInit.RELU)
-                .updater(new Adam(1e-3))
-                .weightDecay(1e-4)
-                .graphBuilder()
-                .addInputs("input")
-                .setInputTypes(InputType.convolutional(BOARD_SIZE, BOARD_SIZE, NUM_INPUT_CHANNELS));
+        graph = new Graph();
 
-        String inName = addConvBatchNormBlock(config, "init", "input", true);
+        Ops tf = Ops.create(graph);
+
+        Placeholder<TBool> input = tf.withName("input").placeholder(TBool.class,
+                Placeholder.shape(Shape.of(-1, NUM_INPUT_CHANNELS, BOARD_SIZE * BOARD_SIZE)));
+        Placeholder<TFloat32> policyLabels = tf.withName("policyLabels").placeholder(TFloat32.class,
+                Placeholder.shape(Shape.of(-1, BOARD_SIZE * BOARD_SIZE)));
+        Placeholder<TFloat32> valueLabels = tf.withName("valueLabels").placeholder(TFloat32.class);
+
+        Operand<TFloat32> operand = addConvBatchNormBlock(tf, tf.dtypes.cast(input, TFloat32.class), 3, CHANNELS, true);
         for (int i = 0; i < 12; i++) {
-            inName = addResidualBlock(config, i, inName);
+            operand = addResidualBlock(tf, operand);
         }
 
-        config.addLayer("policyConv", new ConvolutionLayer.Builder(1, 1)
-                        .nOut(2)
-                        .convolutionMode(ConvolutionMode.Same)
-                        .build(), inName)
-//                .addLayer("policyNorm", new BatchNormalization.Builder()
-//                        .build(), "policyConv")
-                .addLayer("policyRelu", new ActivationLayer.Builder()
-                        .activation(Activation.RELU)
-                        .build(), "policyConv")
-                .addLayer("policyOut", new OutputLayer.Builder(LossFunctions.LossFunction.MCXENT)
-                        .nOut(BOARD_SIZE * BOARD_SIZE)
-                        .activation(Activation.SOFTMAX)
-                        .weightInit(WeightInit.XAVIER)
-                        .build(), "policyRelu")
+        Operand<TFloat32> policyRelu = addConvBatchNormBlock(tf, operand, 1, 2, true);
+        Operand<TFloat32> policyFlat = tf.reshape(policyRelu, tf.array(-1, 2 * BOARD_SIZE * BOARD_SIZE));
+        Variable<TFloat32> policyFcWeights = tf.variable(tf.math.mul(tf.random
+                        .truncatedNormal(tf.array(2 * BOARD_SIZE * BOARD_SIZE, BOARD_SIZE * BOARD_SIZE), TFloat32.class),
+                tf.constant(0.1f)));
+        Variable<TFloat32> policyFcBiases = tf.variable(tf.zeros(tf.array(BOARD_SIZE * BOARD_SIZE), TFloat32.class));
+        Operand<TFloat32> policyLogits = tf.math.add(tf.linalg.matMul(policyFlat, policyFcWeights), policyFcBiases);
+        tf.withName("policyOut").nn.softmax(policyLogits);
 
-                .addLayer("valueConv", new ConvolutionLayer.Builder(1, 1)
-                        .nOut(1)
-                        .convolutionMode(ConvolutionMode.Same)
-                        .build(), inName)
-//                .addLayer("valueNorm", new BatchNormalization.Builder()
-//                        .build(), "valueConv")
-                .addLayer("valueRelu", new ActivationLayer.Builder()
-                        .activation(Activation.RELU)
-                        .build(), "valueConv")
-                .addLayer("valueFC", new DenseLayer.Builder()
-                        .nOut(128)
-                        .build(), "valueRelu")
-//                .addLayer("valueDenseNorm", new BatchNormalization.Builder()
-//                        .build(), "valueFC")
-                .addLayer("valueDenseRelu", new ActivationLayer.Builder()
-                        .activation(Activation.RELU)
-                        .build(), "valueFC")
-                .addLayer("valueOut", new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
-                        .nOut(1)
-                        .activation(Activation.TANH)
-                        .weightInit(WeightInit.XAVIER)
-                        .build(), "valueDenseRelu")
+        Operand<TFloat32> valueRelu = addConvBatchNormBlock(tf, operand, 1, 1, true);
+        Operand<TFloat32> valueFlat = tf.reshape(valueRelu, tf.array(-1, BOARD_SIZE * BOARD_SIZE));
+        Variable<TFloat32> valueFcWeights = tf.variable(tf.math.mul(tf.random
+                        .truncatedNormal(tf.array(BOARD_SIZE * BOARD_SIZE, 256), TFloat32.class),
+                tf.constant(0.1f)));
+        Variable<TFloat32> valueFcBiases = tf.variable(tf.zeros(tf.array(256), TFloat32.class));
+        Operand<TFloat32> valueFc = tf.math.add(tf.linalg.matMul(valueFlat, valueFcWeights), valueFcBiases);
+        Variable<TFloat32> valueOutWeights = tf.variable(tf.math.mul(tf.random
+                        .truncatedNormal(tf.array(256, 1), TFloat32.class),
+                tf.constant(0.1f)));
+        Variable<TFloat32> valueOutBias = tf.variable(tf.zeros(tf.array(1), TFloat32.class));
+        Operand<TFloat32> valueOut = tf.withName("valueOut").math.tanh(tf.math.add(tf.linalg.matMul(valueFc, valueOutWeights), valueOutBias));
 
-                .setOutputs("policyOut", "valueOut");
+        Operand<TFloat32> loss = tf.math.add(tf.nn.softmaxCrossEntropyWithLogits(policyLogits, policyLabels).loss(),
+                tf.math.mean(tf.math.square(tf.math.sub(valueOut, valueLabels)), tf.constant(0)));
 
-        computationGraph = new ComputationGraph(config.build());
-        computationGraph.init();
+        Optimizer optimizer = new Momentum(graph, 1e-2f, 0.9f);
+        optimizer.minimize(loss, TRAIN);
+
+        session = new Session(graph);
     }
 
-    private String addConvBatchNormBlock(ComputationGraphConfiguration.GraphBuilder config, String blockName, String inName, boolean useActivation) {
-        String convName = "conv_" + blockName;
-        String bnName = "batch_norm_" + blockName;
-        String actName = "relu_" + blockName;
+    private Operand<TFloat32> addConvBatchNormBlock(Ops tf, Operand<TFloat32> input, int width, int channels, boolean useActivation) {
+        Variable<TFloat32> convWeights = tf.variable(tf.math.mul(tf.random
+                        .truncatedNormal(tf.array(width, width, NUM_INPUT_CHANNELS, channels), TFloat32.class),
+                tf.constant(0.1f)));
+        Conv2d<TFloat32> conv = tf.nn.conv2d(input, convWeights, Arrays.asList(1L, 1L, 1L, 1L), PADDING_TYPE);
 
-        config.addLayer(convName, new ConvolutionLayer.Builder(3, 3).nOut(64).convolutionMode(ConvolutionMode.Same).build(), inName);
-       // config.addLayer(bnName, new BatchNormalization.Builder().nOut(64).build(), convName);
+        Variable<TFloat32> mean = tf.variable(tf.zeros(tf.array(channels), TFloat32.class));
+        Variable<TFloat32> variance = tf.variable(tf.ones(tf.array(channels), TFloat32.class));
+
+        Variable<TFloat32> scale = tf.variable(tf.ones(tf.array(channels), TFloat32.class));
+        Variable<TFloat32> offset = tf.variable(tf.zeros(tf.array(channels), TFloat32.class));
+
+        FusedBatchNorm<TFloat32, TFloat32> batchNorm = tf.nn.fusedBatchNorm(conv, scale, offset, mean, variance);
+
         if (useActivation) {
-            config.addLayer(actName, new ActivationLayer.Builder().activation(Activation.RELU).build(), convName);
-            return actName;
+            return tf.nn.relu(batchNorm.op().output(0));
         } else {
-            return convName;
+            return batchNorm.op().output(0);
         }
     }
 
-    private String addResidualBlock(ComputationGraphConfiguration.GraphBuilder config, int blockNumber, String inName) {
-        String firstBlock = "residual_1_" + blockNumber;
-        String secondBlock = "residual_2_" + blockNumber;
-        String mergeBlock = "add_" + blockNumber;
-        String actBlock = "relu_" + blockNumber;
-
-        String firstBnOut = addConvBatchNormBlock(config, firstBlock, inName, true);
-        String secondBnOut = addConvBatchNormBlock(config, secondBlock, firstBnOut, false);
-        config.addVertex(mergeBlock, new ElementWiseVertex(ElementWiseVertex.Op.Add), inName, secondBnOut);
-        config.addLayer(actBlock, new ActivationLayer.Builder().activation(Activation.RELU).build(), mergeBlock);
-        return actBlock;
+    private Operand<TFloat32> addResidualBlock(Ops tf, Operand<TFloat32> input) {
+        Operand<TFloat32> firstBnOut = addConvBatchNormBlock(tf, input, 3, CHANNELS, true);
+        Operand<TFloat32> secondBnOut = addConvBatchNormBlock(tf, firstBnOut, 3, CHANNELS, false);
+        return tf.nn.relu(tf.math.add(input, secondBnOut));
     }
 
     public CompletableFuture<Output> predict(GameState gameState) {
@@ -155,86 +138,59 @@ public class Model extends Thread {
 
     public void fit(ExperienceBuffer experienceBuffer, int numBatches) {
         for (int i = 0; i < numBatches; i++) {
-            org.nd4j.linalg.dataset.api.MultiDataSet dataSet = experienceBuffer.sample(BATCH_SIZE);
-            // Mirror half of the data to improve model generalisation
-            INDArray newFeatures = dataSet.getFeatures(0);
-            INDArray features = newFeatures.dup();
-            INDArray newPolicy = dataSet.getLabels(0);
-            INDArray policy = newPolicy.dup();
-            for (int sampleIndex = 0; sampleIndex < BATCH_SIZE / 2; sampleIndex++) {
-                for (int row = 0; row < BOARD_SIZE; row++) {
-                    int invertedRow = BOARD_SIZE - 1 - row;
-                    for (int column = 0; column < BOARD_SIZE; column++) {
-                        int invertedColumn = BOARD_SIZE - 1 - column;
-                        newFeatures.putScalar(sampleIndex, 0, invertedRow, invertedColumn,
-                                features.getFloat(sampleIndex, 0, row, column));
-                        newFeatures.putScalar(sampleIndex, 1, invertedRow, invertedColumn,
-                                features.getFloat(sampleIndex, 1, row, column));
-                        newPolicy.putScalar(sampleIndex, (long) invertedRow * BOARD_SIZE + invertedColumn,
-                                policy.getFloat(sampleIndex, row * BOARD_SIZE + column));
-                    }
-                }
-            }
-            computationGraph.fit(dataSet);
         }
     }
 
     @SneakyThrows
     public void save(File file) {
-        computationGraph.save(file);
+        SavedModelBundle.exporter(file.getAbsolutePath())
+                .withSession(session)
+                .export();
     }
 
-    private void extractFeatures(List<GameState> gameStates, INDArray featuresOut) {
-        featuresOut.assign(0.0f);
+    private void extractFeatures(List<GameState> gameStates, BooleanNdArray featuresOut) {
+        featuresOut.scalars().forEach(b -> b.setBoolean(false));
 
         for (int i = 0; i < gameStates.size(); i++) {
-            final GameState gameState = gameStates.get(i);
+            GameState gameState = gameStates.get(i);
 
-            INDArray ownPieces = featuresOut.get(NDArrayIndex.point(i), NDArrayIndex.point(0));
-            INDArray enemyPieces = featuresOut.get(NDArrayIndex.point(i), NDArrayIndex.point(1));
-            INDArray swapPossible = featuresOut.get(NDArrayIndex.point(i), NDArrayIndex.point(2));
+            BooleanNdArray ownPieces = featuresOut.get(i, 0);
+            BooleanNdArray enemyPieces = featuresOut.get(i, 1);
+            BooleanNdArray swapPossible = featuresOut.get(i, 2);
+            BooleanNdArray ownTargets = featuresOut.get(i, 3);
+            BooleanNdArray enemyTargets = featuresOut.get(i, 4);
 
-            for (int flat = 0; flat < BOARD_SIZE * BOARD_SIZE; flat++) {
-                Piece p = gameState.getPiece(flat);
-                if (p == null) continue;
+            for (int hexIndex = 0; hexIndex < BOARD_SIZE * BOARD_SIZE; hexIndex++) {
+                int column = hexIndex % BOARD_SIZE;
+                if (column == 0 || column == BOARD_SIZE - 1) {
+                    ownTargets.setBoolean(true, hexIndex);
+                }
 
-                int equalizedIndex = equalizeIndex(flat, gameState.getSideToMove());
-                int eqRow = equalizedIndex / BOARD_SIZE;
-                int eqCol = equalizedIndex % BOARD_SIZE;
+                int row = hexIndex / BOARD_SIZE;
+                if (row == 0 || row == BOARD_SIZE - 1) {
+                    enemyTargets.setBoolean(true, hexIndex);
+                }
 
-                if (p.getColor() == gameState.getSideToMove()) {
-                    ownPieces.putScalar(eqRow, eqCol, 1.0f);
+                Piece piece = gameState.getPiece(hexIndex);
+                if (piece == null) continue;
+
+                int eqIndex = equalizeIndex(hexIndex, gameState.getSideToMove());
+
+                if (piece.getColor() == gameState.getSideToMove()) {
+                    ownPieces.setBoolean(true, eqIndex);
                 } else {
-                    enemyPieces.putScalar(eqRow, eqCol, 1.0f);
+                    enemyPieces.setBoolean(true, eqIndex);
                 }
             }
 
             if (gameState.getHalfMoveCounter() == 1) {
-                swapPossible.assign(1.0f);
+                swapPossible.scalars().forEach(b -> b.setBoolean(true));
             }
         }
-
-        featuresOut.get(NDArrayIndex.all(), NDArrayIndex.point(3), NDArrayIndex.point(0), NDArrayIndex.all()).assign(1.0f);
-        featuresOut.get(NDArrayIndex.all(), NDArrayIndex.point(3), NDArrayIndex.point(BOARD_SIZE - 1), NDArrayIndex.all()).assign(1.0f);
-
-        featuresOut.get(NDArrayIndex.all(), NDArrayIndex.point(4), NDArrayIndex.all(), NDArrayIndex.point(0)).assign(1.0f);
-        featuresOut.get(NDArrayIndex.all(), NDArrayIndex.point(4), NDArrayIndex.all(), NDArrayIndex.point(BOARD_SIZE - 1)).assign(1.0f);
     }
 
-    public MultiDataSet createDataSet(GameState gameState, Output output) {
-        INDArray features = Nd4j.create(1, NUM_INPUT_CHANNELS, BOARD_SIZE, BOARD_SIZE);
-        extractFeatures(List.of(gameState), features);
-        final float[] policyJvm = new float[BOARD_SIZE * BOARD_SIZE];
-        for (int flat = 0; flat < BOARD_SIZE * BOARD_SIZE; flat++) {
-            policyJvm[equalizeIndex(flat, gameState.getSideToMove())] = output.policy()[flat];
-        }
-        INDArray policy = Nd4j.create(policyJvm, new int[]{1, BOARD_SIZE * BOARD_SIZE});
-        INDArray value = Nd4j.createFromArray(output.value()).reshape(1, 1);
-
-        return new MultiDataSet(
-                new INDArray[]{features},
-                new INDArray[]{policy, value}
-        );
+    public Dataset createDataSet(GameState gameState, Output output) {
+        return null;
     }
 
     private int equalizeIndex(int index, Piece.Color sideToMove) {
@@ -255,39 +211,41 @@ public class Model extends Thread {
         return canRow * BOARD_SIZE + canCol;
     }
 
-    static long c = 0;
-    static long lastPrintTime = 0;
     @Override
     public void run() {
         final List<Task> tasks = new ArrayList<>();
-        final INDArray input = Nd4j.create(BATCH_SIZE, NUM_INPUT_CHANNELS, BOARD_SIZE, BOARD_SIZE);
+        final TBool inputBuffer = Tensor.of(TBool.class, Shape.of(BATCH_SIZE, NUM_INPUT_CHANNELS, BOARD_SIZE * BOARD_SIZE));
         while (true) {
-            try (MemoryWorkspace workspace = Nd4j.getWorkspaceManager().getAndActivateWorkspace(workspaceConfig, workspaceId)) {
-                try {
-                    tasks.add(taskQueue.take());
-                } catch (InterruptedException e) {
-                    return;
-                }
-                taskQueue.drainTo(tasks, BATCH_SIZE - 1);
-                if (System.currentTimeMillis() - lastPrintTime > 1000) {
-                    lastPrintTime = System.currentTimeMillis();
-                    log.info("Total task count: {}, Batch task count: {}", c, tasks.size());
-                }
-                c += tasks.size();
-                extractFeatures(tasks.stream().map(Task::gameState).toList(), input);
-                final INDArray[] outputs = computationGraph.output(false, workspace, input.get(NDArrayIndex.interval(0, tasks.size())));
-                final INDArray policies = outputs[0];
-                final INDArray values = outputs[1];
+            try {
+                tasks.add(taskQueue.take());
+            } catch (InterruptedException e) {
+                return;
+            }
+            taskQueue.drainTo(tasks, BATCH_SIZE - 1);
+            if (System.currentTimeMillis() - lastPrintTime > 1000) {
+                lastPrintTime = System.currentTimeMillis();
+                log.info("Total task count: {}, Batch task count: {}", c, tasks.size());
+            }
+            c += tasks.size();
+            extractFeatures(tasks.stream().map(Task::gameState).toList(), inputBuffer);
+            try (
+                    Result result = session.runner()
+                            .feed("input", inputBuffer)
+                            .addTarget("policyOut")
+                            .addTarget("valueOut")
+                            .run()
+            ) {
+                TFloat32 policyOut = (TFloat32) result.get("policyOut").orElseThrow();
+                TFloat32 valueOut = (TFloat32) result.get("valueOut").orElseThrow();
                 for (int i = 0; i < tasks.size(); i++) {
-                    final Task task = tasks.get(i);
-                    final INDArray policy = policies.get(NDArrayIndex.point(i));
-                    final float[] policyJvm = new float[BOARD_SIZE * BOARD_SIZE];
+                    Task task = tasks.get(i);
+                    float[] policyJvm = new float[BOARD_SIZE * BOARD_SIZE];
                     for (int flat = 0; flat < BOARD_SIZE * BOARD_SIZE; flat++) {
-                        policyJvm[flat] = policy.getFloat(equalizeIndex(flat, task.gameState.getSideToMove()));
+                        policyJvm[flat] = policyOut.getFloat(i, equalizeIndex(flat, task.gameState.getSideToMove()));
                     }
-                    final Output output = new Output(
+                    Output output = new Output(
                             policyJvm,
-                            values.getFloat(i)
+                            valueOut.getFloat(i)
                     );
                     cache.put(task.gameState, output);
                     task.future.complete(output);
@@ -295,6 +253,12 @@ public class Model extends Thread {
             }
             tasks.clear();
         }
+    }
+
+    @Override
+    public void close() {
+        session.close();
+        graph.close();
     }
 
     public record Output(float[] policy, float value) implements Cloneable {
