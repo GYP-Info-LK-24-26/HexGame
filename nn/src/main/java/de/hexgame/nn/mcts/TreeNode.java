@@ -144,7 +144,7 @@ public class TreeNode {
     }
 
     public void print(String prefix, String childrenPrefix) {
-        System.out.println(prefix + gameState.hashCode());
+        System.out.println(prefix + move);
         for (Iterator<TreeNode> it = children.iterator(); it.hasNext(); ) {
             TreeNode next = it.next();
             if (next.getVisits() == 0) continue;

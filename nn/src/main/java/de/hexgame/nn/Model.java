@@ -148,7 +148,7 @@ public class Model extends Thread {
             return CompletableFuture.completedFuture(cachedOutput);
         }
 
-        Task task = new Task(gameState, new CompletableFuture<>());
+        Task task = new Task(gameState.clone(), new CompletableFuture<>());
         taskQueue.add(task);
         return task.future;
     }
@@ -193,13 +193,6 @@ public class Model extends Thread {
             INDArray ownPieces = featuresOut.get(NDArrayIndex.point(i), NDArrayIndex.point(0));
             INDArray enemyPieces = featuresOut.get(NDArrayIndex.point(i), NDArrayIndex.point(1));
             INDArray swapPossible = featuresOut.get(NDArrayIndex.point(i), NDArrayIndex.point(2));
-
-            FloatBuffer fbOwn = ownPieces.data().asNioFloat();
-            FloatBuffer fbEnemy = enemyPieces.data().asNioFloat();
-            for (int k = 0; k < fbOwn.capacity(); k++) {
-                fbOwn.put(k, 0f);
-                fbEnemy.put(k, 0f);
-            }
 
             for (int flat = 0; flat < BOARD_SIZE * BOARD_SIZE; flat++) {
                 Piece p = gameState.getPiece(flat);
@@ -282,7 +275,7 @@ public class Model extends Thread {
                 }
                 c += tasks.size();
                 extractFeatures(tasks.stream().map(Task::gameState).toList(), input);
-                final INDArray[] outputs = computationGraph.output(false, workspace, input);
+                final INDArray[] outputs = computationGraph.output(false, workspace, input.get(NDArrayIndex.interval(0, tasks.size())));
                 final INDArray policies = outputs[0];
                 final INDArray values = outputs[1];
                 for (int i = 0; i < tasks.size(); i++) {
