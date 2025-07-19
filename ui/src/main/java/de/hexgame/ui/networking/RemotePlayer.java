@@ -61,4 +61,9 @@ public class RemotePlayer implements Player, ClientNet {
     public void setPlayerName(String playerName) {
         this.playerName = playerName;
     }
+
+    public synchronized void end(){
+        move = new Position(-1,-1);
+        notify();
+    }
 }

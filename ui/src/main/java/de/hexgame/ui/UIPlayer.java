@@ -1,8 +1,6 @@
 package de.hexgame.ui;
 
-import de.hexgame.logic.GameState;
-import de.hexgame.logic.Move;
-import de.hexgame.logic.Player;
+import de.hexgame.logic.*;
 import de.hexgame.logic.Util;
 import de.igelstudios.ClientMain;
 
@@ -40,5 +38,10 @@ public class UIPlayer implements Player {
         Move ret = nextMove;
         nextMove = null;
         return ret;
+    }
+
+    public synchronized void end(){
+        nextMove = new Move(new Position(-1,-1));
+        notify();
     }
 }

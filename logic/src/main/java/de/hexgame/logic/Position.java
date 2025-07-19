@@ -43,4 +43,12 @@ public record Position(int row, int column) {
     public String toString() {
         return String.format("(%d, %d)", row, column);
     }
+
+    /**
+     * Checks weather this Position is a terminator eg a Position which explicitly ends the game
+     * @return true if this is a terminator
+     */
+    public boolean isTerminator(){
+        return  row == -1 && column == -1;
+    }
 }

@@ -392,7 +392,7 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
         secondMoving.setA(0);
         firstMoving.setA(0);
         sideChanged.setA(0);
-        running = true;
+        running = false;
 
         firstChance.setA(0);
         winChanceFirstTxt.setA(0);
@@ -406,6 +406,8 @@ public class UIGameBoard implements PlayerMoveListener, MouseClickListener, WinC
         try {
             if(game != null) {
                 game.terminate();
+                playerList.forEach(UIPlayer::end);
+                HexServer.finish();
                 game.asThread().join();
             }
             HexClient.forceStop();

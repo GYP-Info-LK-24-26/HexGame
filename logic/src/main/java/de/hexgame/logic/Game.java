@@ -81,6 +81,8 @@ public class Game implements Runnable {
             Player finalPlayerToMove = playerToMove;
             playerMoveListeners.forEach(listener -> listener.onPlayerPreMove(finalPlayerToMove));
             Move move = playerToMove.think(gameState);
+            //To make it so that the UI can terminate a game the UIPlayer has to return and to ensure that the game does not get altered, an invalid move has to be returned
+            if(move.targetHexagon().isTerminator())break;
             if (!gameState.isLegalMove(move)) {
                 throw new IllegalStateException(
                         String.format("%s tried to play the illegal move %s", playerToMove.getName(), move)

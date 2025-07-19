@@ -85,4 +85,8 @@ public class HexServer implements ConnectionListener {
     public static void addRelevantPlayer(RemotePlayer remotePlayer){
         instance.relevantPlayers.add(remotePlayer);
     }
+
+    public static void finish(){
+        if(instance != null) instance.relevantPlayers.forEach(RemotePlayer::end);
+    }
 }

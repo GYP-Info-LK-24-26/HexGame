@@ -12,10 +12,9 @@ public class Util {
 
         int start = 0;
         double xCPY = x - yRow * UIGameBoard.get().getScale() / 2.0f;//1.8675
-        while (UIGameBoard.get().getRightBounds().get(start) < xCPY)start++;
+        while (start < UIGameBoard.get().getRightBounds().size() && UIGameBoard.get().getRightBounds().get(start) < xCPY)start++;
+        if(start >= UIGameBoard.get().getRightBounds().size())return new Position(-1,-1);
         start--;
-        x -= UIGameBoard.get().getLeftOffset();
-        x /= UIGameBoard.get().getScale();
 
         boolean tip = y - Math.floor(y) >= 0.65;
         if(tip)return new Position(-1,-1);
