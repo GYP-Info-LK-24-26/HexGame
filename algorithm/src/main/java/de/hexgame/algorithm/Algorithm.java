@@ -12,30 +12,27 @@ public class Algorithm extends Thread{
     private final int board;
     @Setter
     private GameState gameState;
-    private boolean[][] isVisited;
+    private int[][] isVisited;
+    private double[] moveRating;
 
     public Algorithm() {
         board = GameState.BOARD_SIZE;
-        isVisited = new boolean[board][board];
+        isVisited = new int[board][board];
+        moveRating = new double[board * board];
+
         clear();
+        for (int i = 0; i < 121; i++) {
+            moveRating[i] = 0.0;
+        }
     }
 
+    //Resets the break-condition
     public void clear() {
         for (int i = 0; i < board; i++) {
             for (int j = 0; j < board; j++) {
-                isVisited[i][j] = false;
+                isVisited[i][j] = 0;
             }
         }
-    }
-
-    public GameState update(List<Move> moves) {
-        GameState temp = gameState.clone();
-        for (Move move : moves) {
-            temp.makeMove(move);
-            temp.update(move.targetHexagon());
-            temp.switchSideToMove();
-        }
-        return temp;
     }
 
     public double calculateRating(Position position, Piece.Color usedColor) {
@@ -96,12 +93,12 @@ public class Algorithm extends Thread{
         int row = position.row();
         int column = position.column();
         if (gameState.getSideToMove() == Piece.Color.RED) {
-            isVisited[row][column] = true;
+            isVisited[row][column]++;
             for (Direction direction : Direction.ALL) {
                 if (!position.add(direction).isValid()) {
                     continue;
                 }
-                if (isVisited[position.add(direction).row()][position.add(direction).column()]) {
+                if (isVisited[position.add(direction).row()][position.add(direction).column()] > 2) {
                     continue;
                 }
                 if (position.column() == board - 1) {
@@ -117,7 +114,7 @@ public class Algorithm extends Thread{
                         continue;
                     }
                 }
-                if (!position.isValid()
+                if (position.isValid()
                         && cGameState.getPiece(position.add(direction)) == null) {
                      counter += countRow(cGameState, position.add(direction));
                 }
@@ -127,12 +124,12 @@ public class Algorithm extends Thread{
             }
         }
         else {
-            isVisited[row][column] = true;
+            isVisited[row][column]++;
             for (Direction direction : Direction.ALL) {
                 if (!position.add(direction).isValid()) {
                     continue;
                 }
-                if (isVisited[position.add(direction).row()][position.add(direction).column()]) {
+                if (isVisited[position.add(direction).row()][position.add(direction).column()] > 2) {
                     continue;
                 }
                 if (position.row() == board - 1) {
@@ -146,7 +143,7 @@ public class Algorithm extends Thread{
                         continue;
                     }
                 }
-                if (!position.isValid()
+                if (position.isValid()
                         && cGameState.getPiece(position.add(direction)) == null) {
                     counter += countRow(cGameState, position.add(direction));
                 }
@@ -159,405 +156,43 @@ public class Algorithm extends Thread{
     }
 
 
-    public double directionRow(GameState cGameState, Move move, Direction direction, List<Move> moves) {
-        if (move.targetHexagon().add(direction).isValid()
-                && cGameState.getPiece(move.targetHexagon().add(direction)) == null) {
-            move = new Move(move.targetHexagon().add(direction));
-            moves.add(move);
-            return rowUntilEnd(moves, move) + 1.0 + Math.random() * 0.1;
-        }
-        else if (move.targetHexagon().add(direction).isValid()
-                    && cGameState.getPiece(move.targetHexagon().add(direction)).getColor() == cGameState.getSideToMove()) {
-            return rowUntilEnd(moves, move) + Math.random() * 0.1;
-        }
-        else if (move.targetHexagon().row() == 1
-                    || move.targetHexagon().row() == board - 2
-                    || move.targetHexagon().column() == 1
-                    || move.targetHexagon().column() == board - 2) {
-            return 1.0;
-        }
-        return Double.POSITIVE_INFINITY;
-    }
-
-    public double rowUntilEnd(List<Move> moves, Move move) {
-        GameState cGameState;
-        double temp;
-        double best = Double.POSITIVE_INFINITY;
-        cGameState = update(moves);
-        boolean highRow = false, lowRow = false, highColumn = false, lowColumn = false;
-        int counter = 2;
-
-        if (cGameState.isFinished()) {
-            return 0;
-        }
-
-        if (move.targetHexagon().column() <= 5) {
-            lowColumn = true;
-        }
-        if (move.targetHexagon().column() >= 5) {
-            highColumn = true;
-        }
-        if (move.targetHexagon().row() <= 5) {
-            lowRow = true;
-        }
-        if (move.targetHexagon().row() >= 5) {
-            highRow = true;
-        }
-
-        if (gameState.getSideToMove() == Piece.Color.RED) {
-            if (cGameState.getPiece(move.targetHexagon()) != null
-                    && cGameState.getPiece(move.targetHexagon()).isConnectedLow()) {
-                if (lowRow) {
-                    temp = directionRow(cGameState, move, Direction.DOWN_RIGHT, moves);
-                    if (temp < best) {
-                        best = temp;
-                    }
-                    if (temp < (board - move.targetHexagon().add(Direction.DOWN_RIGHT).column()) + counter
-                            || temp < move.targetHexagon().add(Direction.DOWN_RIGHT).column() + counter) {
-                        return temp;
-                    }
-                }
-
-                if (highRow) {
-                    temp = directionRow(cGameState, move, Direction.UP_RIGHT, moves);
-                    if (temp < best) {
-                        best = temp;
-                    }
-
-                    if (temp < (board - move.targetHexagon().add(Direction.UP_RIGHT).column()) + counter
-                            || temp + counter < move.targetHexagon().add(Direction.UP_RIGHT).column()) {
-                        return temp;
-                    }
-                }
-
-                temp = directionRow(cGameState, move, Direction.RIGHT, moves);
-                if (temp < best) {
-                    best = temp;
-                }
-                if (temp < (board - move.targetHexagon().add(Direction.RIGHT).column()) + counter
-                        || temp < move.targetHexagon().add(Direction.RIGHT).column() + counter) {
-                    return temp;
-                }
-            }
-            else if (cGameState.getPiece(move.targetHexagon()) != null
-                    && cGameState.getPiece(move.targetHexagon()).isConnectedHigh()) {
-                if (lowRow) {
-                    temp = directionRow(cGameState, move, Direction.DOWN_LEFT, moves);
-                    if (temp < best) {
-                        best = temp;
-                    }
-
-                    if (temp <  (board - move.targetHexagon().add(Direction.DOWN_LEFT).column()) + counter
-                            || temp < move.targetHexagon().add(Direction.DOWN_LEFT).column() + counter) {
-                        return temp;
-                    }
-                }
-                if (highRow) {
-                    temp = directionRow(cGameState, move, Direction.UP_LEFT, moves);
-                    if (temp < best) {
-                        best = temp;
-                    }
-
-                    if (temp <  (board - move.targetHexagon().add(Direction.UP_LEFT).column()) + counter
-                            || temp < move.targetHexagon().add(Direction.UP_LEFT).column() + counter) {
-                        return temp;
-                    }
-                }
-
-                temp = directionRow(cGameState, move, Direction.LEFT, moves);
-                if (temp < best) {
-                    best = temp;
-                }
-                if (temp < (board - move.targetHexagon().add(Direction.LEFT).column()) + counter
-                        || temp < move.targetHexagon().add(Direction.LEFT).column() + counter) {
-                    return temp;
-                }
-            }
-            else if (false){
-                for (Direction direction : Direction.ALL) {
-                    temp = directionRow(cGameState, move, direction, moves);
-                    if (temp < best) {
-                        best = temp;
-                    }
-                    if (temp < (board - move.targetHexagon().add(direction).column()) + counter
-                            || temp < move.targetHexagon().add(direction).column() + counter) {
-                        return temp;
-                    }
-                }
-            }
-        }
-        else {
-            if (gameState.getSideToMove() == Piece.Color.BLUE) {
-                if (cGameState.getPiece(move.targetHexagon()) != null
-                        && cGameState.getPiece(move.targetHexagon()).isConnectedLow()) {
-                    temp = directionRow(cGameState, move, Direction.DOWN_LEFT, moves);
-                    if (temp < best) {
-                        best = temp;
-                    }
-                    if (temp < (board - move.targetHexagon().add(Direction.DOWN_LEFT).row()) + counter
-                            || temp < move.targetHexagon().add(Direction.DOWN_LEFT).row() + counter) {
-                        return temp;
-                    }
-
-                    temp = directionRow(cGameState, move, Direction.DOWN_RIGHT, moves);
-                    if (temp < best) {
-                        best = temp;
-                    }
-                    if (temp < (board - move.targetHexagon().add(Direction.DOWN_RIGHT).row()) + counter
-                            || temp < move.targetHexagon().add(Direction.DOWN_RIGHT).row() + counter) {
-                        return temp;
-                    }
-                }
-                else if (cGameState.getPiece(move.targetHexagon()) != null
-                        && cGameState.getPiece(move.targetHexagon()).isConnectedHigh()) {
-                    temp = directionRow(cGameState, move, Direction.UP_LEFT, moves);
-                    if (temp < best) {
-                        best = temp;
-                    }
-                    if (temp < (board - move.targetHexagon().add(Direction.UP_LEFT).row()) + counter
-                            || temp < move.targetHexagon().add(Direction.UP_LEFT).row() + counter) {
-                        return temp;
-                    }
-
-                    temp = directionRow(cGameState, move, Direction.UP_RIGHT, moves);
-                    if (temp < best) {
-                        best = temp;
-                    }
-                    if (temp < (board - move.targetHexagon().add(Direction.UP_RIGHT).row()) + counter
-                            || temp < move.targetHexagon().add(Direction.UP_RIGHT).row() + counter) {
-                        return temp;
-                    }
-                }
-                else if (false){
-                    for (Direction direction : Direction.ALL) {
-                        temp = directionRow(cGameState, move, direction, moves);
-                        if (temp < best) {
-                            best = temp;
-                        }
-                        if (temp < (board - move.targetHexagon().add(direction).column()) + counter
-                                || temp < move.targetHexagon().add(direction).column() + counter) {
-                            return temp;
-                        }
-                    }
-                }
-            }
-        }
-        return best;
-    }
-
-    public Position betterAlgorithm() {
-        GameState cGameState = gameState.clone();
-        Position bestPosition = null;
-        Piece.Color usedColor = cGameState.getSideToMove();
-        Piece.Color otherColor;
-        double bestRating = Double.NEGATIVE_INFINITY;
-        double tempRating;
-        Piece tempPiece;
-
-        if (usedColor == Piece.Color.RED) otherColor = Piece.Color.BLUE;
-        else otherColor = Piece.Color.RED;
-
-        for (Move move: cGameState.getLegalMoves()) {
-            boolean tempHighConnect = false, tempLowConnect = false;
-            if (cGameState.getPiece(move.targetHexagon()) == null && move.targetHexagon().isValid()) {
-                cGameState.makeMove(move);
-                if (cGameState.isFinished()) {
-                    return move.targetHexagon();
-                }
-                for (Direction direction: Direction.ALL) {
-                    if (move.targetHexagon().add(direction).isValid() && cGameState.getPiece(move.targetHexagon().add(direction)) != null && cGameState.getPiece(move.targetHexagon().add(direction)).getColor() == otherColor) {
-                        tempPiece = cGameState.getPiece(move.targetHexagon().add(direction));
-                        if (tempPiece.isConnectedHigh()) {
-                            tempHighConnect = true;
-                        }
-                        if (tempPiece.isConnectedLow()) {
-                            tempLowConnect = true;
-                        }
-                        if (cGameState.isFinished()) {
-                            return move.targetHexagon();
-                        }
-                        if (otherColor == Piece.Color.RED) {
-                            if (tempPiece.isConnectedHigh() && move.targetHexagon().column() == 0 && move.targetHexagon().row() == move.targetHexagon().add(direction).row() || tempPiece.isConnectedLow() && move.targetHexagon().column() == board - 1 && move.targetHexagon().row() == move.targetHexagon().add(direction).row()) {
-                                return move.targetHexagon();
-                            }
-                        }
-                        else {
-                            if (tempPiece.isConnectedHigh() && move.targetHexagon().row() == 0 && move.targetHexagon().column() == move.targetHexagon().add(direction).column() || tempPiece.isConnectedLow() && move.targetHexagon().row() == board - 1 && move.targetHexagon().column() == move.targetHexagon().add(direction).column()) {
-                                return move.targetHexagon();
-                            }
-                        }
-                    }
-                }
-                if (tempHighConnect && tempLowConnect) {
-                    return move.targetHexagon();
-                }
-            }
-            tempRating = calculatePieceRating(move.targetHexagon(), usedColor);
-
-            if (tempRating > bestRating) {
-                bestRating = tempRating;
-                bestPosition = move.targetHexagon();
-            }
-        }
-        return bestPosition;
-    }
-
-    public Position betterAlgorithmIn2() {
-        Position bestPostion = null, tempPosition, tempOtherColorPosition, tempDirectionPosition, tempOtherColorDirectionPosition, tempSameColorPosition;
-        double bestRating = Double.NEGATIVE_INFINITY;
-        double tempRating = 0;
-        double tempOtherColorRating = 0;
-        double tempSameColorRating = 0;
-        int counterFreePieces = board * board;
-        double counterFreePiecesSameColor = board * board;
-        GameState cGameState, cGameState2;
-        Piece.Color otherColor;
-        Piece.Color usedColor = gameState.getSideToMove();
-
-        if (usedColor == Piece.Color.BLUE) {
-            otherColor = Piece.Color.RED;
-        } else {
-            otherColor = Piece.Color.BLUE;
-        }
-
-        for (Move move : gameState.getLegalMoves()) {
-            cGameState = gameState.clone();
-            boolean tempHighConnect = false, tempLowConnect = false;
-            tempPosition = new Position(move.getIndex());
-            cGameState.makeMove(move);
-            cGameState.update(move.targetHexagon());
-
-            if (cGameState.isFinished()) {
-                return tempPosition;
-            }
-
-            for (Direction direction: Direction.ALL) {
-                tempDirectionPosition = tempPosition.add(direction);
-                if (move.targetHexagon().add(direction).isValid()
-                        && cGameState.getPiece(move.targetHexagon().add(direction)) != null
-                        && cGameState.getPiece(move.targetHexagon().add(direction)).getColor() == otherColor) {
-                    if (cGameState.getPiece(move.targetHexagon().add(direction)).isConnectedHigh()) {
-                        tempHighConnect = true;
-                    }
-                    if (cGameState.getPiece(move.targetHexagon().add(direction)).isConnectedLow()) {
-                        tempLowConnect = true;
-                    }
-                }
-                if (cGameState.isFinished()) {
-                    return move.targetHexagon();
-                }
-                if (otherColor == Piece.Color.RED) {
-                    if (cGameState.getPiece(move.targetHexagon()).isConnectedHigh()
-                                && move.targetHexagon().column() == 0
-                                && move.targetHexagon().row() == move.targetHexagon().add(direction).row()
-                            || cGameState.getPiece(move.targetHexagon()).isConnectedLow()
-                                && move.targetHexagon().column() == board - 1
-                                && move.targetHexagon().row() == move.targetHexagon().add(direction).row()) {
-                        return move.targetHexagon();
-                    }
-                }
-                else {
-                    if (cGameState.getPiece(move.targetHexagon()).isConnectedHigh()
-                                && move.targetHexagon().row() == 0
-                                && move.targetHexagon().column() == move.targetHexagon().add(direction).column()
-                            || cGameState.getPiece(move.targetHexagon()).isConnectedLow()
-                                && move.targetHexagon().row() == board - 1
-                                && move.targetHexagon().column() == move.targetHexagon().add(direction).column()) {
-                        return move.targetHexagon();
-                    }
-                }
-                tempRating = tempRating + calculateRating(tempDirectionPosition, usedColor);
-            }
-
-            if (tempHighConnect && tempLowConnect) {
-                return tempPosition;
-            }
-
-            for (Move move1 : cGameState.getLegalMoves()) {
-                cGameState2 = gameState.clone();
-                cGameState2.makeMove(move);
-                cGameState2.update(move.targetHexagon());
-                if (move1.targetHexagon().getIndex() == tempPosition.getIndex()) {
-                    counterFreePieces--;
-                    continue;
-                }
-                tempOtherColorPosition = new Position(move1.targetHexagon().getIndex());
-                cGameState2.makeMove(move1);
-                if (cGameState2.isFinished()) {
-                    return move.targetHexagon();
-                }
-
-                for (Direction otherColorDirection : Direction.ALL) {
-                    tempOtherColorDirectionPosition = tempOtherColorPosition.add(otherColorDirection);
-                    tempOtherColorRating = tempOtherColorRating + calculateRating(tempOtherColorDirectionPosition, otherColor);
-                    if (!tempOtherColorDirectionPosition.isValid()
-                            || cGameState2.getPiece(tempOtherColorDirectionPosition) == null) {
-                        continue;
-                    }
-                    if (cGameState2.getPiece(tempOtherColorDirectionPosition).isConnectedLow()) {
-                        cGameState2.getPiece(tempOtherColorDirectionPosition).setConnectedLow(true);
-                    }
-                    if (cGameState2.getPiece(tempOtherColorDirectionPosition).isConnectedHigh()) {
-                        cGameState2.getPiece(tempOtherColorDirectionPosition).setConnectedHigh(true);
-                    }
-                }
-
-                for (Move move2: cGameState2.getLegalMoves()) {
-                    if (move2.targetHexagon().getIndex() == tempPosition.getIndex()
-                            || move2.targetHexagon().getIndex() == tempOtherColorPosition.getIndex()) {
-                        counterFreePiecesSameColor = counterFreePiecesSameColor - (1 / (double) (board * board));
-                        continue;
-                    }
-                    tempSameColorPosition = new Position(move2.targetHexagon().getIndex());
-
-                    tempSameColorRating = calculatePieceRating(tempSameColorPosition, usedColor);
-                }
-            }
-            tempRating = tempRating - (tempOtherColorRating / counterFreePieces) + (tempSameColorRating / (counterFreePiecesSameColor * counterFreePieces));
-
-            if (tempRating > bestRating) {
-                bestRating = tempRating;
-                bestPostion = tempPosition;
-            }
-        }
-
-        return bestPostion;
-    }
-
     public Position longRowAlgorithm() {
-        GameState cGameState;
+        GameState cGameState, cGameState2;
         Position bestPostition = null;
         Position tempPosition = new Position(0);
         Piece.Color usedColor = gameState.getSideToMove();
-        Piece.Color otherColor;
         Piece tempPiece;
-        Move move;
         double bestLength = 0;
-        double tempLength = 0;
+        List<Move> possibleMoves = new ArrayList<>();
 
-        if (usedColor == Piece.Color.RED) {otherColor = Piece.Color.BLUE;}
-        else {otherColor = Piece.Color.RED;}
-
-        for (int i = 0; i < 121; i++) {
+        //Checks every possible move
+        for (Move move : gameState.getLegalMoves()) {
+            //Clones game to be abel to make moves
             cGameState = gameState.cloneWithoutListeners();
             boolean tempHighConnect = false, tempLowConnect = false;
-            tempPosition = new Position(i);
-            move = new Move(tempPosition);
+            tempPosition = new Position(move.getIndex());
 
+            //Checks if move is legal and the selected position is not occupied
             if (move.targetHexagon().isValid()
                     && cGameState.getPiece(move.targetHexagon()) == null) {
-                cGameState.switchSideToMove();
+
+                //Simulates the move
                 cGameState.makeMove(move);
                 cGameState.update(move.targetHexagon());
 
+                //If an ending position is possible, it will be selected
                 if (cGameState.isFinished()) {
                     return move.targetHexagon();
                 }
 
+                //Checks the pieces in every direction
                 for (Direction direction: Direction.ALL) {
+
+                    //Checks if move is legal and the selected position is occupied
                     if (move.targetHexagon().add(direction).isValid()
                             && cGameState.getPiece(move.targetHexagon().add(direction)) != null) {
 
+                        //generates a piece of the selected position
                         tempPiece = cGameState.getPiece(move.targetHexagon().add(direction));
 
                         if (tempPiece.isConnectedHigh()) {
@@ -566,131 +201,136 @@ public class Algorithm extends Thread{
                         if (tempPiece.isConnectedLow()) {
                             tempLowConnect = true;
                         }
-                        if (otherColor == Piece.Color.RED) {
-                            if (tempPiece.isConnectedHigh() && move.targetHexagon().column() == 0
-                                        && move.targetHexagon().row() == move.targetHexagon().add(direction).row()
-                                    || tempPiece.isConnectedLow() && move.targetHexagon().column() == board - 1
-                                        && move.targetHexagon().row() == move.targetHexagon().add(direction).row()) {
+                        if (tempHighConnect && tempLowConnect) {
+                            return move.targetHexagon();
+                        }
+
+                        //Checks if the next move of the opponent would be a loss for itself
+                        if (gameState.getSideToMove() == Piece.Color.BLUE) {
+                            if (tempPiece.isConnectedHigh()
+                                    && move.targetHexagon().column() == 0
+                                    && move.targetHexagon().row() == move.targetHexagon().add(direction).row()
+                                    || tempPiece.isConnectedLow()
+                                    && move.targetHexagon().column() == board - 1
+                                    && move.targetHexagon().row() == move.targetHexagon().add(direction).row()) {
                                 return move.targetHexagon();
                             }
                         }
                         else {
-                            if (tempPiece.isConnectedHigh() && move.targetHexagon().row() == 0
-                                        && move.targetHexagon().column() == move.targetHexagon().add(direction).column()
-                                    || tempPiece.isConnectedLow() && move.targetHexagon().row() == board - 1
-                                        && move.targetHexagon().column() == move.targetHexagon().add(direction).column()) {
+                            if (tempPiece.isConnectedHigh()
+                                    && move.targetHexagon().row() == 0
+                                    && move.targetHexagon().column() == move.targetHexagon().add(direction).column()
+                                    || tempPiece.isConnectedLow()
+                                    && move.targetHexagon().row() == board - 1
+                                    && move.targetHexagon().column() == move.targetHexagon().add(direction).column()) {
                                 return move.targetHexagon();
                             }
                         }
                     }
                 }
-                if (tempHighConnect && tempLowConnect) {
-                    return move.targetHexagon();
-                }
-                tempLength = -0.15 * calculatePieceRating(tempPosition, usedColor);
+                //Calculates the rating of the piece
+                moveRating[move.getIndex()] = -0.25 * calculatePieceRating(tempPosition, usedColor);
 
-                if (cGameState.getPiece(tempPosition) != null && cGameState.getPiece(tempPosition).getColor() == otherColor) {
-                    tempLength = tempLength + (countRow(cGameState, tempPosition) / cGameState.getHalfMoveCounter());
+                if (true) {
+                    moveRating[move.getIndex()] = moveRating[move.getIndex()] + (countRow(cGameState, tempPosition) / cGameState.getHalfMoveCounter());
                 }
-            }
-            if (tempLength > bestLength) {
-                bestLength = tempLength;
-                bestPostition = tempPosition;
+
+                //Selects the "best" Moves of the list
+                if (possibleMoves.size() <= 20) {
+                    possibleMoves.add(move);
+                }
+                else {
+                    for (Move pMove : possibleMoves) {
+                        if (moveRating[move.getIndex()] > moveRating[pMove.getIndex()]) {
+                            possibleMoves.remove(pMove);
+                            possibleMoves.add(move);
+                            break;
+                        }
+                    }
+                }
             }
             clear();
         }
+
+        //Checks every for the best moves from before every possible move for the next half-move
+        for (Move move : possibleMoves) {
+            cGameState = gameState.cloneWithoutListeners();
+            cGameState.makeMove(move);
+            cGameState.update(move.targetHexagon());
+
+            for (Move move2 : cGameState.getLegalMoves()) {
+                cGameState2 = cGameState.cloneWithoutListeners();
+                boolean tempHighConnect = false, tempLowConnect = false;
+
+                //Checks if selected position is legal and not occupied
+                if (move.targetHexagon().isValid()
+                        && cGameState2.getPiece(move.targetHexagon()) == null) {
+
+                    //Makes move
+                    cGameState2.makeMove(move2);
+                    cGameState2.update(move2.targetHexagon());
+
+                    if (cGameState2.isFinished()) {
+                        return move.targetHexagon();
+                    }
+
+                    //Checks the pieces in every direction
+                    for (Direction direction : Direction.ALL) {
+                        //Checks if the direction added to the position is legal and if there is a piece
+                        if (move2.targetHexagon().add(direction).isValid()
+                                && cGameState2.getPiece(move2.targetHexagon().add(direction)) != null) {
+
+                            tempPiece = cGameState2.getPiece(move2.targetHexagon().add(direction));
+
+                            //If it is possible the other color to finish the game, and it can be provided by this move, the selected position will be played
+                            if (tempPiece.isConnectedHigh()) {
+                                tempHighConnect = true;
+                            }
+                            if (tempPiece.isConnectedLow()) {
+                                tempLowConnect = true;
+                            }
+                            if (tempLowConnect && tempHighConnect) {
+                                return move.targetHexagon();
+                            }
+                            if (gameState.getSideToMove() == Piece.Color.BLUE) {
+                                if (tempPiece.isConnectedHigh()
+                                        && move2.targetHexagon().column() == 0
+                                        && move2.targetHexagon().row() == move2.targetHexagon().add(direction).row()
+                                            || tempPiece.isConnectedLow()
+                                        && move2.targetHexagon().column() == board - 1
+                                        && move2.targetHexagon().row() == move2.targetHexagon().add(direction).row()) {
+                                    return move.targetHexagon();
+                                }
+                            }
+                            else {
+                                if (tempPiece.isConnectedHigh()
+                                        && move2.targetHexagon().row() == 0
+                                        && move2.targetHexagon().column() == move2.targetHexagon().add(direction).column()
+                                            || tempPiece.isConnectedLow()
+                                        && move2.targetHexagon().row() == board - 1
+                                        && move2.targetHexagon().column() == move2.targetHexagon().add(direction).column()) {
+                                    return move.targetHexagon();
+                                }
+                            }
+                        }
+                    }
+                    //Calculates the rating
+                    moveRating[move.getIndex()] = (-0.15 * calculatePieceRating(move2.targetHexagon(), usedColor) / (double) possibleMoves.size()) + (countRow(cGameState2, move2.targetHexagon()) / (cGameState2.getHalfMoveCounter() * (double) possibleMoves.size()));
+                }
+                clear();
+
+                //Selects the best rating
+                if (moveRating[move.getIndex()] > bestLength) {
+                    bestLength = moveRating[move.getIndex()];
+                    bestPostition = new Position(move.getIndex());
+                }
+
+            }
+        }
+        //Checks if there is a bestPosition
         if (bestPostition == null) {
             return tempPosition;
         }
         return bestPostition;
-    }
-
-    public Position bestPosition() {
-        Position bestPosition = null;
-        int bestLength = Integer.MAX_VALUE;
-        int tempLength = 0;
-        int neighboringPieces;
-        GameState cGameState = gameState.cloneWithoutListeners();
-        Piece.Color usedColor = gameState.getSideToMove(), otherColor = Piece.Color.RED;
-        boolean topConnected, bottomConnected;
-        int sameColorConnected;
-
-        if (usedColor == Piece.Color.RED) {
-            otherColor = Piece.Color.BLUE;
-        }
-
-        for (Move move : cGameState.getLegalMoves()) {
-            topConnected = false;
-            bottomConnected = false;
-            sameColorConnected = 0;
-            neighboringPieces = 0;
-            for (Direction direction : Direction.ALL) {
-                if (move.targetHexagon().add(direction).isValid()) {
-                    if (gameState.getPiece(move.targetHexagon().add(direction)) != null) {
-                        neighboringPieces ++;
-                        if (gameState.getPiece(move.targetHexagon().add(direction)).getColor() == usedColor) {
-                            sameColorConnected ++;
-                        }
-                    }
-                    else {
-                        continue;
-                    }
-
-                    if (gameState.getPiece(move.targetHexagon().add(direction)).getColor() == Piece.Color.RED && usedColor == Piece.Color.BLUE) {
-                        if (gameState.getPiece(move.targetHexagon().add(direction)).isConnectedHigh()
-                            && move.targetHexagon().add(direction).row() == move.targetHexagon().row()
-                            && move.targetHexagon().column() == 0) {
-                            return move.targetHexagon();
-                        }
-                        if (gameState.getPiece(move.targetHexagon().add(direction)).isConnectedLow()
-                            && move.targetHexagon().add(direction).row() == move.targetHexagon().row()
-                            && move.targetHexagon().column() == board - 1) {
-                            return move.targetHexagon();
-                        }
-                    } else if (gameState.getPiece(move.targetHexagon().add(direction)).getColor() == Piece.Color.BLUE && usedColor == Piece.Color.RED) {
-                        if (gameState.getPiece(move.targetHexagon().add(direction)).isConnectedHigh()
-                            && move.targetHexagon().add(direction).column() == move.targetHexagon().column()
-                            && move.targetHexagon().add(direction).row() == 0) {
-                            return move.targetHexagon();
-                        }
-                        if (gameState.getPiece(move.targetHexagon().add(direction)).isConnectedLow()
-                            && move.targetHexagon().add(direction).row() == move.targetHexagon().row()
-                            && move.targetHexagon().row() == 0) {
-                            return move.targetHexagon();
-                        }
-                    }
-                }
-                else {
-                    neighboringPieces ++;
-                }
-            }
-            if (neighboringPieces >= 5 || sameColorConnected >= 4) {
-                continue;
-            }
-            cGameState.makeMove(move);
-            cGameState.update(move.targetHexagon());
-            if (cGameState.isFinished()) {
-                return move.targetHexagon();
-            }
-        }
-        return betterAlgorithm();
-    }
-
-    public Position test() {
-        double temp;
-        double best = Double.POSITIVE_INFINITY;
-        Move bestMove = null;
-
-        for (Move move : gameState.getLegalMoves()) {
-            List<Move> temp2 = new ArrayList<>();
-            temp2.add(move);
-            temp = rowUntilEnd(temp2, move);
-            if (temp < best) {
-                bestMove = move;
-                best = temp;
-            }
-        }
-
-        return bestMove.targetHexagon();
     }
 }
