@@ -90,7 +90,7 @@ Ein grafisch und strategisch anspruchsvolles Brettspiel mit KI-Gegnern, entwicke
 
 ## 📸 Screenshots
 
-*(Optional: Hier können Screenshots des Spiels eingefügt werden)*
+![screenshot 1](screenshots/screenshot_1.png)
 
 ## 📄 Lizenz
 
