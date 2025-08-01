@@ -15,7 +15,9 @@ import org.tensorflow.op.core.Placeholder;
 import org.tensorflow.op.core.Variable;
 import org.tensorflow.op.nn.Conv2d;
 import org.tensorflow.op.nn.FusedBatchNorm;
-import org.tensorflow.proto.data.Dataset;
+import org.tensorflow.proto.Example;
+import org.tensorflow.proto.Feature;
+import org.tensorflow.proto.Features;
 import org.tensorflow.types.TBool;
 import org.tensorflow.types.TFloat32;
 
@@ -219,8 +221,15 @@ public class Model extends Thread implements Closeable {
         }
     }
 
-    public Dataset createDataSet(GameState gameState, Output output) {
-        return null;
+    public Example createExample(GameState gameState, Output output) {
+        extractFeatures(gameState, Tensor.of());
+        return Example.newBuilder()
+                .setFeatures(Features.newBuilder()
+                        .putFeature("input", Feature.parseFrom(Tensor.of(TBool.class, )))
+                        .putFeature("policyLabels", null)
+                        .putFeature("valueLabels", null)
+                        .build())
+                .build();
     }
 
     private int equalizeIndex(int index, Piece.Color sideToMove) {

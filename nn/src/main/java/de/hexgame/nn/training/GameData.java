@@ -22,7 +22,7 @@ public class GameData {
             Model.Output output = entry.getValue();
             float targetValue = hasWon ? 1.0f : -1.0f;
             Model.Output targetOutput = new Model.Output(output.policy(), targetValue);
-            dataSetsOut.accept(model.createDataSet(gameState, targetOutput));
+            dataSetsOut.accept(model.createExample(gameState, targetOutput));
         });
     }
 
