@@ -45,9 +45,10 @@ public class Model extends Thread implements Closeable {
     @SneakyThrows
     public Model(File file, boolean loadUpdater) {
         setDaemon(true);
-        SavedModelBundle modelBundle = SavedModelBundle.load(file.getAbsolutePath());
-        graph = modelBundle.graph();
-        session = modelBundle.session();
+        try (SavedModelBundle modelBundle = SavedModelBundle.load(file.getAbsolutePath())) {
+            graph = modelBundle.graph();
+            session = modelBundle.session();
+        }
     }
 
     public Model() {
@@ -61,36 +62,52 @@ public class Model extends Thread implements Closeable {
         Placeholder<TFloat32> policyLabels = tf.withName("policyLabels").placeholder(TFloat32.class,
                 Placeholder.shape(Shape.of(-1, BOARD_SIZE * BOARD_SIZE)));
         Placeholder<TFloat32> valueLabels = tf.withName("valueLabels").placeholder(TFloat32.class);
+        Placeholder<TBool> isTraining = tf.withName("isTraining").placeholder(TBool.class);
 
-        Operand<TFloat32> operand = addConvBatchNormBlock(tf, tf.dtypes.cast(input, TFloat32.class), 3, CHANNELS, true);
+        List<Variable<TFloat32>> allWeights = new ArrayList<>();
+
+        Operand<TFloat32> operand = addConvBatchNormBlock(tf, tf.dtypes.cast(input, TFloat32.class), 3, CHANNELS, true, allWeights, isTraining);
         for (int i = 0; i < 12; i++) {
-            operand = addResidualBlock(tf, operand);
+            operand = addResidualBlock(tf, operand, allWeights, isTraining);
         }
 
-        Operand<TFloat32> policyRelu = addConvBatchNormBlock(tf, operand, 1, 2, true);
-        Operand<TFloat32> policyFlat = tf.reshape(policyRelu, tf.array(-1, 2 * BOARD_SIZE * BOARD_SIZE));
+        Operand<TFloat32> policyRelu = addConvBatchNormBlock(tf, operand, 1, 2, true, allWeights, isTraining);
+        Operand<TFloat32> policyFlat = tf.reshape(policyRelu, tf.array(BATCH_SIZE, 2 * BOARD_SIZE * BOARD_SIZE));
         Variable<TFloat32> policyFcWeights = tf.variable(tf.math.mul(tf.random
                         .truncatedNormal(tf.array(2 * BOARD_SIZE * BOARD_SIZE, BOARD_SIZE * BOARD_SIZE), TFloat32.class),
                 tf.constant(0.1f)));
+        allWeights.add(policyFcWeights);
         Variable<TFloat32> policyFcBiases = tf.variable(tf.zeros(tf.array(BOARD_SIZE * BOARD_SIZE), TFloat32.class));
         Operand<TFloat32> policyLogits = tf.math.add(tf.linalg.matMul(policyFlat, policyFcWeights), policyFcBiases);
         tf.withName("policyOut").nn.softmax(policyLogits);
 
-        Operand<TFloat32> valueRelu = addConvBatchNormBlock(tf, operand, 1, 1, true);
-        Operand<TFloat32> valueFlat = tf.reshape(valueRelu, tf.array(-1, BOARD_SIZE * BOARD_SIZE));
+        Operand<TFloat32> valueRelu = addConvBatchNormBlock(tf, operand, 1, 1, true, allWeights, isTraining);
+        Operand<TFloat32> valueFlat = tf.reshape(valueRelu, tf.array(BATCH_SIZE, BOARD_SIZE * BOARD_SIZE));
         Variable<TFloat32> valueFcWeights = tf.variable(tf.math.mul(tf.random
                         .truncatedNormal(tf.array(BOARD_SIZE * BOARD_SIZE, 256), TFloat32.class),
                 tf.constant(0.1f)));
+        allWeights.add(valueFcWeights);
         Variable<TFloat32> valueFcBiases = tf.variable(tf.zeros(tf.array(256), TFloat32.class));
         Operand<TFloat32> valueFc = tf.math.add(tf.linalg.matMul(valueFlat, valueFcWeights), valueFcBiases);
         Variable<TFloat32> valueOutWeights = tf.variable(tf.math.mul(tf.random
                         .truncatedNormal(tf.array(256, 1), TFloat32.class),
                 tf.constant(0.1f)));
+        allWeights.add(valueOutWeights);
         Variable<TFloat32> valueOutBias = tf.variable(tf.zeros(tf.array(1), TFloat32.class));
         Operand<TFloat32> valueOut = tf.withName("valueOut").math.tanh(tf.math.add(tf.linalg.matMul(valueFc, valueOutWeights), valueOutBias));
 
-        Operand<TFloat32> loss = tf.math.add(tf.nn.softmaxCrossEntropyWithLogits(policyLogits, policyLabels).loss(),
+        Operand<TFloat32> mainLoss = tf.math.add(tf.nn.softmaxCrossEntropyWithLogits(policyLogits, policyLabels).loss(),
                 tf.math.mean(tf.math.square(tf.math.sub(valueOut, valueLabels)), tf.constant(0)));
+
+        List<Operand<TFloat32>> l2Terms = new ArrayList<>();
+        for (Variable<TFloat32> weights : allWeights) {
+            Operand<TFloat32> sum = tf.reduceSum(tf.math.square(weights), tf.constant(0));
+            l2Terms.add(sum);
+        }
+        Operand<TFloat32> l2 = tf.math.accumulateN(l2Terms, Shape.of(1));
+        Operand<TFloat32> l2Loss = tf.math.mul(l2, tf.constant(1e-4f));
+
+        Operand<TFloat32> loss = tf.math.add(mainLoss, l2Loss);
 
         Optimizer optimizer = new Momentum(graph, 1e-2f, 0.9f);
         optimizer.minimize(loss, TRAIN);
@@ -98,10 +115,11 @@ public class Model extends Thread implements Closeable {
         session = new Session(graph);
     }
 
-    private Operand<TFloat32> addConvBatchNormBlock(Ops tf, Operand<TFloat32> input, int width, int channels, boolean useActivation) {
+    private Operand<TFloat32> addConvBatchNormBlock(Ops tf, Operand<TFloat32> input, int width, int channels, boolean useActivation, List<Variable<TFloat32>> allWeights, Placeholder<TBool> isTraining) {
         Variable<TFloat32> convWeights = tf.variable(tf.math.mul(tf.random
-                        .truncatedNormal(tf.array(width, width, NUM_INPUT_CHANNELS, channels), TFloat32.class),
+                        .truncatedNormal(tf.array(width, width, input.shape().get(1), channels), TFloat32.class),
                 tf.constant(0.1f)));
+        allWeights.add(convWeights);
         Conv2d<TFloat32> conv = tf.nn.conv2d(input, convWeights, Arrays.asList(1L, 1L, 1L, 1L), PADDING_TYPE);
 
         Variable<TFloat32> mean = tf.variable(tf.zeros(tf.array(channels), TFloat32.class));
@@ -110,18 +128,23 @@ public class Model extends Thread implements Closeable {
         Variable<TFloat32> scale = tf.variable(tf.ones(tf.array(channels), TFloat32.class));
         Variable<TFloat32> offset = tf.variable(tf.zeros(tf.array(channels), TFloat32.class));
 
-        FusedBatchNorm<TFloat32, TFloat32> batchNorm = tf.nn.fusedBatchNorm(conv, scale, offset, mean, variance);
+        FusedBatchNorm<TFloat32, TFloat32> batchNormInf = tf.nn.fusedBatchNorm(conv, scale, offset, mean, variance, FusedBatchNorm.isTraining(false));
+        FusedBatchNorm<TFloat32, TFloat32> batchNormTrain = tf.nn.fusedBatchNorm(conv, scale, offset,
+                tf.zeros(tf.constant(channels), TFloat32.class), tf.zeros(tf.constant(channels), TFloat32.class),
+                FusedBatchNorm.isTraining(true));
+
+        Operand<TFloat32> batchNorm = tf.select(isTraining, batchNormTrain.op().output(0), batchNormInf.op().output(0));
 
         if (useActivation) {
-            return tf.nn.relu(batchNorm.op().output(0));
+            return tf.nn.relu(batchNorm);
         } else {
-            return batchNorm.op().output(0);
+            return batchNorm;
         }
     }
 
-    private Operand<TFloat32> addResidualBlock(Ops tf, Operand<TFloat32> input) {
-        Operand<TFloat32> firstBnOut = addConvBatchNormBlock(tf, input, 3, CHANNELS, true);
-        Operand<TFloat32> secondBnOut = addConvBatchNormBlock(tf, firstBnOut, 3, CHANNELS, false);
+    private Operand<TFloat32> addResidualBlock(Ops tf, Operand<TFloat32> input, List<Variable<TFloat32>> allWeights, Placeholder<TBool> isTraining) {
+        Operand<TFloat32> firstBnOut = addConvBatchNormBlock(tf, input, 3, CHANNELS, true, allWeights, isTraining);
+        Operand<TFloat32> secondBnOut = addConvBatchNormBlock(tf, firstBnOut, 3, CHANNELS, false, allWeights, isTraining);
         return tf.nn.relu(tf.math.add(input, secondBnOut));
     }
 
@@ -138,6 +161,13 @@ public class Model extends Thread implements Closeable {
 
     public void fit(ExperienceBuffer experienceBuffer, int numBatches) {
         for (int i = 0; i < numBatches; i++) {
+            experienceBuffer.sample(BATCH_SIZE);
+            Result result = session.runner()
+                    .feed("input", inputBuffer)
+                    .feed("isTraining", Tensor.of(TBool.class, Shape.scalar(), b -> b.setBoolean(false)))
+                    .addTarget("policyOut")
+                    .addTarget("valueOut")
+                    .run();
         }
     }
 
@@ -231,6 +261,7 @@ public class Model extends Thread implements Closeable {
             try (
                     Result result = session.runner()
                             .feed("input", inputBuffer)
+                            .feed("isTraining", Tensor.of(TBool.class, Shape.scalar(), b -> b.setBoolean(false)))
                             .addTarget("policyOut")
                             .addTarget("valueOut")
                             .run()
