@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -14,7 +15,7 @@ import java.util.Objects;
  * This is the class that runs the Game, used by {@link Game}
  */
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class GameState implements Cloneable {
+public class GameState implements Serializable, Cloneable {
     public static final int BOARD_SIZE = 11;
 
     private Piece[] pieces;
