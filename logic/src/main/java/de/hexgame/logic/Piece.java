@@ -4,12 +4,13 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 @AllArgsConstructor
 @Getter
 @Setter
-public class Piece implements Cloneable {
+public class Piece implements Serializable, Cloneable {
     public enum Color {
         RED,
         BLUE;

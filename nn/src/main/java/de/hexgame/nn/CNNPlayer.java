@@ -32,7 +32,7 @@ public class CNNPlayer implements Player {
     private int finishedSimulations = 0;
 
     public CNNPlayer() {
-        this(new Model(DEFAULT_MODEL_FILE, false), null);
+        this(new Model(DEFAULT_MODEL_FILE), null);
         model.start();
     }
 

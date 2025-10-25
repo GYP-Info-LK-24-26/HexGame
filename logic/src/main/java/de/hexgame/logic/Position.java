@@ -1,5 +1,7 @@
 package de.hexgame.logic;
 
+import java.io.Serializable;
+
 import static de.hexgame.logic.GameState.BOARD_SIZE;
 
 /**
@@ -7,7 +9,7 @@ import static de.hexgame.logic.GameState.BOARD_SIZE;
  * @param row the row of the object
  * @param column the column of the object
  */
-public record Position(int row, int column) {
+public record Position(int row, int column) implements Serializable {
     public Position(int hexagonIndex) {
         this(hexagonIndex / BOARD_SIZE, hexagonIndex % BOARD_SIZE);
     }

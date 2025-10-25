@@ -16,7 +16,7 @@ public class Trainer implements Runnable {
     private static final int GAMES_PER_ITERATION = 100;
     private static final int EXPERIENCE_BUFFER_SIZE = 50_000;
     private static final int BATCHES_PER_ITERATION = 250;
-    private static final File MODEL_FILE = new File("model.zip");
+    private static final File MODEL_FILE = new File("model");
     private static final File EXPERIENCE_FILE = new File("experience.bin");
 
     private final ExperienceBuffer experienceBuffer = new ExperienceBuffer(EXPERIENCE_BUFFER_SIZE);
@@ -30,7 +30,7 @@ public class Trainer implements Runnable {
             experienceBuffer.load(EXPERIENCE_FILE);
         }
         if (MODEL_FILE.exists()) {
-            model = new Model(MODEL_FILE, true);
+            model = new Model(MODEL_FILE);
         } else {
             model = new Model();
             if (experienceBuffer.size() == EXPERIENCE_BUFFER_SIZE) {
@@ -75,8 +75,8 @@ public class Trainer implements Runnable {
         Player playerB = new CNNPlayer(model, gameDataB);
         Game game = new Game(gameState, playerA, playerB);
         game.addPlayerWinListener(winner -> {
-            gameDataA.extractDataSets(winner == playerA, model, experienceBuffer::add);
-            gameDataB.extractDataSets(winner == playerB, model, experienceBuffer::add);
+            gameDataA.extractSamples(winner == playerA, experienceBuffer::add);
+            gameDataB.extractSamples(winner == playerB, experienceBuffer::add);
         });
 
         int gameNumber;

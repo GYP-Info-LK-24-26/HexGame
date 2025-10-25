@@ -71,9 +71,7 @@ public class CircularFifoQueue<T> implements Queue<T> {
 
     @Override
     public boolean add(T t) {
-        if (!offer(t)) {
-            throw new IllegalStateException("Queue is full");
-        }
+        offer(t);
         return true;
     }
 
@@ -118,12 +116,11 @@ public class CircularFifoQueue<T> implements Queue<T> {
 
     @Override
     public boolean offer(T t) {
-        if (size() == array.length) {
-            return false;
-        }
-
         array[tail] = t;
         tail = successor(tail);
+        if (tail == head) {
+            head = successor(head);
+        }
         return true;
     }
 
@@ -160,6 +157,11 @@ public class CircularFifoQueue<T> implements Queue<T> {
         }
 
         return array[head];
+    }
+
+    public T get(int index) {
+        index = (index + head) % array.length;
+        return array[index];
     }
 
     private int predecessor(int index) {

@@ -4,7 +4,8 @@ import de.hexgame.logic.GameState;
 import de.hexgame.logic.Move;
 import de.hexgame.nn.Model;
 import lombok.Getter;
-import org.apache.commons.math3.distribution.GammaDistribution;
+import org.apache.commons.statistics.distribution.ContinuousDistribution;
+import org.apache.commons.statistics.distribution.GammaDistribution;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -41,11 +42,12 @@ public class TreeNode {
     }
 
     public void addDirichletNoise() {
-        GammaDistribution gamma = new GammaDistribution(0.1, 1.0);
+        GammaDistribution gamma = GammaDistribution.of(0.1, 1.0);
+        ContinuousDistribution.Sampler sampler = gamma.createSampler(ThreadLocalRandom.current()::nextLong);
         float[] samples = new float[BOARD_SIZE * BOARD_SIZE];
         float sum = 0.0f;
         for (int i = 0; i < BOARD_SIZE * BOARD_SIZE; i++) {
-            float sample = (float) gamma.sample();
+            float sample = (float) sampler.sample();
             samples[i] = sample;
             sum += sample;
         }
