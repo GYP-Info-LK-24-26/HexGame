@@ -26,7 +26,6 @@ import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -217,7 +216,7 @@ public class Model extends Thread implements Closeable {
 
     public void fit(ExperienceBuffer experienceBuffer, int numBatches) {
         List<ExperienceBuffer.Sample> samples = new ArrayList<>(BATCH_SIZE);
-        try (TBool input = TBool.tensorOf(INPUT_SHAPE); TBool isTraining = TBool.scalarOf(false);
+        try (TBool input = TBool.tensorOf(INPUT_SHAPE);
              TFloat32 policyLabels = TFloat32.scalarOf(1); TFloat32 valueLabels = TFloat32.scalarOf(1)) {
             for (int i = 0; i < numBatches; i++) {
                 experienceBuffer.sample(samples, BATCH_SIZE);
