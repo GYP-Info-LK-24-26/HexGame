@@ -1,0 +1,54 @@
+{
+  "play": "Spielen",
+  "settings": "Einstellungen",
+  "connect": "Verbinden",
+  "host": "Host",
+  "quit": "Beenden",
+
+  "first": "Erster",
+  "second": "Zweiter",
+  "color_change": "Farbwechsel",
+  "first_chance": "1. Chance ",
+  "second_chance": "2. Chance ",
+
+  "connect_suc": "Verbunden",
+  "connect_un": "Verbindung fehlgeschlagen",
+
+  "start": "Start",
+
+  "con_interrupted": "Verbindung geschlossen",
+  "player_disCon": "Spieler verlassen",
+
+  "won": "Gewonnen",
+  "player_won": "hat gewonnen",
+
+  "main_menu": "Hauptmenü",
+
+  "de.hexgame.ui.UIPlayer": "Lokaler Spieler",
+  "de.hexgame.uifx.board.UIPlayer": "Lokaler Spieler",
+  "de.hexgame.ui.networking.RemotePlayer": "Coop Spieler",
+  "de.hexgame.uifx.networking.RemotePlayer": "Coop Spieler",
+  "de.hexgame.logic.RandomPlayer": "Zufallsspieler",
+  "de.hexgame.algorithm.AlgorithmPlayer": "Algorithm",
+  "de.hexgame.algorithm.alphabeta.FinnAlgoPlayer": "FAlgorithm",
+  "de.hexgame.nn.CNNPlayer": "AI",
+  "de.hexgame.algorithm.mcts.MCTSPlayer": "MCTS",
+
+  "loss": "Verloren",
+  "port": "Port",
+  "name": "Name",
+
+  "save": "Speichern",
+  "saved": "Gespeichert",
+  "lang": "Sprache",
+
+  "re_run": "Wiederholen",
+  "difficulty": "Schwierigkeit",
+
+  "simulate": "Simulieren",
+  "num_games": "Anzahl Spiele",
+  "progress": "Fortschritt",
+  "results": "Ergebnis",
+  "wins": "Siege",
+  "cancel": "Abbrechen"
+}
