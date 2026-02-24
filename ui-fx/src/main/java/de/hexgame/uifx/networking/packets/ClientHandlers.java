@@ -1,10 +1,8 @@
 package de.hexgame.uifx.networking.packets;
 
-import de.hexgame.logic.Piece;
 import de.hexgame.logic.Position;
 import de.hexgame.uifx.networking.HexByteBuf;
 import de.hexgame.uifx.networking.PacketDispatcher;
-import io.netty.channel.ChannelHandlerContext;
 import javafx.application.Platform;
 
 public class ClientHandlers {
@@ -20,7 +18,7 @@ public class ClientHandlers {
         int stateOrd = buf.readInt();
         if (stateOrd == 0) { // ADD_HEX_COLOR
             int index = buf.readInt();
-            Piece.Color color = buf.readEnum(Piece.Color.class);
+            int color = buf.readInt();
             Position pos = new Position(index);
             Platform.runLater(() -> callback.onBoardChange(pos, color));
         } else { // CLEAR_BOARD

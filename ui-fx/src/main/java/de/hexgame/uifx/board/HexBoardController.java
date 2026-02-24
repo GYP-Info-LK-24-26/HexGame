@@ -165,7 +165,7 @@ public class HexBoardController implements PlayerMoveListener, ClientNetworkCall
             canvas.setInputEnabled(isLocal);
             TranslationManager t = TranslationManager.get();
             String label = player == playerA ? t.translate("first") : t.translate("second");
-            Piece.Color color = gameState.getSideToMove();
+            int color = gameState.getSideToMove();
             canvas.setCurrentPlayerLabel(label + " (" + color + ")");
             canvas.redraw();
         });
@@ -174,8 +174,8 @@ public class HexBoardController implements PlayerMoveListener, ClientNetworkCall
     // --- ClientNetworkCallback implementation ---
 
     @Override
-    public void onBoardChange(Position pos, Piece.Color color) {
-        gameState.setPiece(pos, new Piece(color));
+    public void onBoardChange(Position pos, int color) {
+        gameState.setPiece(pos, color);
         canvas.redraw();
     }
 
@@ -211,8 +211,8 @@ public class HexBoardController implements PlayerMoveListener, ClientNetworkCall
 
     private void updateLabel() {
         if (gameState != null) {
-            Piece.Color color = gameState.getSideToMove();
-            canvas.setCurrentPlayerLabel(color.toString());
+            int color = gameState.getSideToMove();
+            canvas.setCurrentPlayerLabel(String.valueOf(color));
         }
     }
 

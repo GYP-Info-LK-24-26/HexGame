@@ -21,7 +21,7 @@ public class BoardChangeHandler implements PlayerMoveListener {
         HexByteBuf buf = HexByteBuf.create();
         buf.writeEnum(ChangeState.ADD_HEX_COLOR);
         buf.writeInt(move.getIndex());
-        buf.writeEnum(gameState.getPiece(move).getColor());
+        buf.writeInt(gameState.getPiece(move));
         server.sendToAll("boardChange", buf.toByteArray());
     }
 

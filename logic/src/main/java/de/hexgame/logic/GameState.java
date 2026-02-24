@@ -17,29 +17,63 @@ import java.util.Objects;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class GameState implements Serializable, Cloneable {
     public static final int BOARD_SIZE = 11;
+    public static final int TOTAL_CELLS = BOARD_SIZE * BOARD_SIZE;
+    public static final int NO_PIECE = 0;
+    public static final int RED = 1;
+    public static final int BLUE = 2;
+    public static final int COLOR_SUM = 3;
+    public static final int GROUP_HIGH = TOTAL_CELLS;
+    public static final int GROUP_LOW = TOTAL_CELLS + 1;
+    public static final int GROUP_COUNT = TOTAL_CELLS + 2;
 
-    private Piece[] pieces;
+    // Precomputed neighbor table: for each cell index, the array of valid neighbor indices
+    public static final int[][] NEIGHBORS = new int[TOTAL_CELLS][];
+
+    static {
+        for (int idx = 0; idx < TOTAL_CELLS; idx++) {
+            int row = idx / BOARD_SIZE;
+            int col = idx % BOARD_SIZE;
+            int count = 0;
+            int[] tmp = new int[6];
+            for (Direction d : Direction.ALL) {
+                int nr = row + d.getDeltaRow();
+                int nc = col + d.getDeltaColumn();
+                if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE) {
+                    tmp[count++] = nr * BOARD_SIZE + nc;
+                }
+            }
+            NEIGHBORS[idx] = new int[count];
+            System.arraycopy(tmp, 0, NEIGHBORS[idx], 0, count);
+        }
+    }
+
+    private int[] pieces;
     @Getter
     private boolean finished;
     @Getter
-    private Piece.Color sideToMove;
+    private int sideToMove;
     @Getter
     /// counts the number of individual moves made
     private int halfMoveCounter;
-    private Position lastChangedPosition;
+    @Getter
+    private int lastMove;
+    @Getter
+    private UnionFind groups;
 
     public GameState() {
-        pieces = new Piece[BOARD_SIZE * BOARD_SIZE];
+        pieces = new int[TOTAL_CELLS];
         finished = false;
-        sideToMove = Piece.Color.RED;
+        sideToMove = RED;
         halfMoveCounter = 0;
+        lastMove = -1;
+        groups = new UnionFind(GROUP_COUNT);
     }
 
-    public Piece getPiece(Position position) {
+    public int getPiece(Position position) {
         return pieces[position.getIndex()];
     }
 
-    public Piece getPiece(int index) {
+    public int getPiece(int index) {
         return pieces[index];
     }
 
@@ -50,12 +84,12 @@ public class GameState implements Serializable, Cloneable {
     public List<Move> getLegalMoves() {
         List<Move> legalMoves = new ArrayList<>();
         if (halfMoveCounter == 1) {
-            legalMoves.add(new Move(lastChangedPosition));
+            legalMoves.add(new Move(new Position(lastMove)));
         }
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int column = 0; column < BOARD_SIZE; column++) {
                 Position position = new Position(row, column);
-                if (getPiece(position) == null) {
+                if (getPiece(position) == NO_PIECE) {
                     legalMoves.add(new Move(position));
                 }
             }
@@ -64,24 +98,28 @@ public class GameState implements Serializable, Cloneable {
     }
 
     public void reset() {
-        Arrays.fill(pieces, null);
+        Arrays.fill(pieces, NO_PIECE);
         finished = false;
-        sideToMove = Piece.Color.RED;
+        sideToMove = RED;
         halfMoveCounter = 0;
     }
 
-    public void setPiece(Position position, Piece piece) {
-        Piece previousPiece = getPiece(position);
-        if (previousPiece != null) {
-            throw new IllegalArgumentException(String.format("Piece at %s already exists", position));
+    public void setPiece(Position position, int piece) {
+        setPiece(position.getIndex(), piece);
+    }
+
+    public void setPiece(int index, int piece) {
+        int previousPiece = getPiece(index);
+        if (previousPiece != NO_PIECE) {
+            throw new IllegalArgumentException(String.format("Piece at %s already exists", new Position(index)));
         }
-        pieces[position.getIndex()] = piece;
-        update(position);
+        pieces[index] = piece;
+        update(index, piece);
     }
 
     public boolean isLegalMove(Move move) {
         Position targetPosition = move.targetHexagon();
-        return getPiece(targetPosition) == null || (halfMoveCounter == 1 && targetPosition.equals(lastChangedPosition));
+        return getPiece(targetPosition) == NO_PIECE || (halfMoveCounter == 1 && targetPosition.getIndex() == lastMove);
     }
 
     //this makes a move,it also accommodates the change of color by a player by not switching the color that is currently at play
@@ -92,97 +130,42 @@ public class GameState implements Serializable, Cloneable {
             );
         }
 
-        if (getPiece(move.targetHexagon()) == null) { // The target hexagon may be occupied for switching sides.
-            setPiece(move.targetHexagon(), new Piece(sideToMove));
+        if (getPiece(move.targetHexagon()) == NO_PIECE) { // The target hexagon may be occupied for switching sides.
+            setPiece(move.targetHexagon(), sideToMove);
             switchSideToMove();
         }
-        lastChangedPosition = move.targetHexagon();
+        lastMove = move.getIndex();
 
         halfMoveCounter++;
     }
 
-    public void switchSideToMove() {
-        if (sideToMove == Piece.Color.RED) {
-            sideToMove = Piece.Color.BLUE;
-        } else {
-            sideToMove = Piece.Color.RED;
+    public void makeMoveFast(int index) {
+        if (pieces[index] == NO_PIECE) {
+            pieces[index] = sideToMove;
+            update(index, sideToMove);
+            sideToMove = COLOR_SUM - sideToMove;
         }
+
+        lastMove = index;
+        halfMoveCounter++;
+    }
+
+    public void switchSideToMove() {
+        sideToMove = COLOR_SUM - sideToMove;
     }
 
     //updates the connected pieces so that the connection states are up to play
-    public void update(Position position) {
-        Piece piece = getPiece(position);
-        if (piece.getColor() == Piece.Color.RED) {
-            if (position.column() == 0) {
-                piece.setConnectedLow(true);
-            } else if (position.column() == BOARD_SIZE - 1) {
-                piece.setConnectedHigh(true);
-            }
-        } else {
-            if (position.row() == 0) {
-                piece.setConnectedLow(true);
-            } else if (position.row() == BOARD_SIZE - 1) {
-                piece.setConnectedHigh(true);
+    private void update(int index, int piece) {
+        for (int n : NEIGHBORS[index]) {
+            if (pieces[n] == piece) {
+                groups.union(n, index);
             }
         }
 
-        updateConnections(position);
-    }
+        unionWithGoalEdge(groups, index, piece);
 
-    /**
-     * recursive function to update the connecting states of all neighbouring pieces
-     * @param position the position to be updated
-     */
-    private void updateConnections(Position position) {
-        Piece piece = getPiece(position);
-
-        // Update own state first
-        for (Direction direction : Direction.ALL) {
-            Position neighbourPosition = position.add(direction);
-            if (!neighbourPosition.isValid()) {
-                continue;
-            }
-
-            Piece neighbourPiece = getPiece(neighbourPosition);
-            //make sure that piece is of the same color
-            if (neighbourPiece == null || neighbourPiece.getColor() != piece.getColor()) {
-                continue;
-            }
-
-            if (neighbourPiece.isConnectedLow()) {
-                piece.setConnectedLow(true);
-                if (piece.isConnectedHigh()) {
-                    finished = true;
-                }
-            }
-
-            if (neighbourPiece.isConnectedHigh()) {
-                piece.setConnectedHigh(true);
-                if (piece.isConnectedLow()) {
-                    finished = true;
-                }
-            }
-        }
-
-        // Relay updates to neighbours
-        for (Direction direction : Direction.ALL) {
-            Position neighbourPosition = position.add(direction);
-            if (!neighbourPosition.isValid()) {
-                continue;
-            }
-
-            Piece neighbourPiece = getPiece(neighbourPosition);
-            if (neighbourPiece == null || neighbourPiece.getColor() != piece.getColor()) {
-                continue;
-            }
-
-            if (piece.isConnectedLow() && !neighbourPiece.isConnectedLow()) {
-                updateConnections(neighbourPosition);
-            }
-
-            if (piece.isConnectedHigh() && !neighbourPiece.isConnectedHigh()) {
-                updateConnections(neighbourPosition);
-            }
+        if (groups.find(GROUP_HIGH) == groups.find(GROUP_LOW)) {
+            finished = true;
         }
     }
 
@@ -196,11 +179,7 @@ public class GameState implements Serializable, Cloneable {
         try {
             GameState clone = (GameState) super.clone();
             clone.pieces = pieces.clone();
-            for (int i = 0; i < pieces.length; i++) {
-                if (pieces[i] != null) {
-                    clone.pieces[i] = pieces[i].clone();
-                }
-            }
+            clone.groups = groups.clone();
             return clone;
         } catch (CloneNotSupportedException e) {
             throw new AssertionError();
@@ -226,14 +205,8 @@ public class GameState implements Serializable, Cloneable {
 
     public long hashCodeLong() {
         long h = 1;
-        for (Piece p : pieces) {
-            long code;
-            if (p == null) {
-                code = 0;
-            } else {
-                code = (p.getColor() == Piece.Color.RED) ? 1 : 2;
-            }
-            h = 31 * h + code;
+        for (int p : pieces) {
+            h = 31 * h + p;
         }
         h = 31 * h + (halfMoveCounter == 1 ? 1 : 0);
         return Long.reverse(h);
@@ -244,5 +217,29 @@ public class GameState implements Serializable, Cloneable {
         if (o == null || getClass() != o.getClass()) return false;
         GameState gameState = (GameState) o;
         return halfMoveCounter == gameState.halfMoveCounter && Objects.deepEquals(pieces, gameState.pieces);
+    }
+
+    /**
+     * Unions the cell at {@code index} with its goal-side edge virtual node
+     * ({@link #GROUP_LOW} or {@link #GROUP_HIGH}) if it lies on that edge.
+     * RED connects column 0 (low) to column BOARD_SIZE-1 (high).
+     * BLUE connects row 0 (low) to row BOARD_SIZE-1 (high).
+     */
+    public static void unionWithGoalEdge(UnionFind groups, int index, int piece) {
+        if (piece == RED) {
+            int column = index % BOARD_SIZE;
+            if (column == 0) {
+                groups.union(index, GROUP_LOW);
+            } else if (column == BOARD_SIZE - 1) {
+                groups.union(index, GROUP_HIGH);
+            }
+        } else {
+            int row = index / BOARD_SIZE;
+            if (row == 0) {
+                groups.union(index, GROUP_LOW);
+            } else if (row == BOARD_SIZE - 1) {
+                groups.union(index, GROUP_HIGH);
+            }
+        }
     }
 }

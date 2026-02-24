@@ -30,6 +30,7 @@
   "de.hexgame.algorithm.AlgorithmPlayer": "Algorithm",
   "de.hexgame.algorithm.alphabeta.FinnAlgoPlayer": "FAlgorithm",
   "de.hexgame.nn.CNNPlayer": "AI",
+  "de.hexgame.algorithm.mcts.MCTSPlayer": "MCTS",
 
   "save": "Speichern",
   "saved": "Gespeichert",

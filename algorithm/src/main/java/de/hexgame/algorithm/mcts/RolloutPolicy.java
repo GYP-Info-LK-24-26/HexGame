@@ -3,13 +3,12 @@ package de.hexgame.algorithm.mcts;
 import de.hexgame.logic.Direction;
 import de.hexgame.logic.GameState;
 import de.hexgame.logic.Move;
-import de.hexgame.logic.Piece;
 import de.hexgame.logic.Position;
 
 import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static de.hexgame.logic.GameState.BOARD_SIZE;
+import static de.hexgame.logic.GameState.*;
 
 /**
  * Rollout (playout) move-selection policy for MCTS simulations.
@@ -25,19 +24,19 @@ class RolloutPolicy {
         Arrays.fill(LGR, -1);
     }
 
-    static Move selectMove(GameState state) {
-        Position lastMove = state.getLastChangedPosition();
-        if (lastMove != null) {
+    static int selectMove(GameState state) {
+        int lastMove = state.getLastMove();
+        if (lastMove != -1) {
             // Save-bridge: if the opponent's last move attacks one of our bridges,
             // deterministically play the other carrier cell to maintain the connection.
             int saveBridge = findSaveBridge(state, lastMove);
             if (saveBridge != -1) {
-                return new Move(new Position(saveBridge));
+                return saveBridge;
             }
 
-            int lgr = LGR[state.getSideToMove().ordinal() * TOTAL_CELLS + lastMove.getIndex()];
-            if (lgr != -1 && state.getPiece(lgr) == null) {
-                return new Move(new Position(lgr));
+            int lgr = LGR[(state.getSideToMove() - RED) * TOTAL_CELLS + lastMove];
+            if (lgr != -1 && state.getPiece(lgr) == NO_PIECE) {
+                return lgr;
             }
         }
 
@@ -52,10 +51,10 @@ class RolloutPolicy {
      *
      * @return the index of the save move, or -1 if no bridge is threatened
      */
-    private static int findSaveBridge(GameState state, Position attackCell) {
-        Piece.Color myColor = state.getSideToMove();
-        int r = attackCell.row();
-        int c = attackCell.column();
+    private static int findSaveBridge(GameState state, int attackCell) {
+        int myColor = state.getSideToMove();
+        int r = attackCell / BOARD_SIZE;
+        int c = attackCell % BOARD_SIZE;
         Direction[] dirs = Direction.ALL;
         int start = ThreadLocalRandom.current().nextInt(6);
 
@@ -72,9 +71,9 @@ class RolloutPolicy {
                 continue;
             }
             int ni = nr * BOARD_SIZE + nc;
-            Piece p = state.getPiece(ni);
-            boolean mine = p != null && p.getColor() == myColor;
-            boolean empty = p == null;
+            int p = state.getPiece(ni);
+            boolean mine = p != NO_PIECE && p == myColor;
+            boolean empty = p == NO_PIECE;
 
             if (s == 0) {
                 if (mine) s = 1;
@@ -90,12 +89,12 @@ class RolloutPolicy {
         return -1;
     }
 
-    static Move randomMove(GameState state) {
+    static int randomMove(GameState state) {
         int r = ThreadLocalRandom.current().nextInt(TOTAL_CELLS);
         for (int i = 0; i < TOTAL_CELLS; i++) {
             int idx = (r + i * 7) % TOTAL_CELLS;
-            if (state.getPiece(idx) == null) {
-                return new Move(new Position(idx));
+            if (state.getPiece(idx) == NO_PIECE) {
+                return idx;
             }
         }
         throw new IllegalStateException("No empty cell found");

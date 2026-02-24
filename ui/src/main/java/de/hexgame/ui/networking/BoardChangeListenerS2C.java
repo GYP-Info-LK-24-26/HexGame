@@ -1,6 +1,5 @@
 package de.hexgame.ui.networking;
 
-import de.hexgame.logic.Piece;
 import de.hexgame.logic.Player;
 import de.hexgame.logic.PlayerMoveListener;
 import de.hexgame.logic.Position;
@@ -15,7 +14,7 @@ public class BoardChangeListenerS2C implements PlayerMoveListener{
         PacketByteBuf buf = PacketByteBuf.create();
         buf.writeEnum(ChangeState.ADD_HEX_COLOR);
         buf.writeInt(move.getIndex());
-        buf.writeEnum(UIGameBoard.get().getGameState().getPiece(move).getColor());
+        buf.writeInt(UIGameBoard.get().getGameState().getPiece(move));
         HexServer.sendToEveryone("boardChange",buf);
     }
 
@@ -33,9 +32,9 @@ public class BoardChangeListenerS2C implements PlayerMoveListener{
         switch (state) {
             case ADD_HEX_COLOR:
                 int index = packetByteBuf.readInt();
-                Piece.Color color = packetByteBuf.readEnum(Piece.Color.class);
+                int color = packetByteBuf.readInt();
                 Position pos = new Position(index);
-                UIGameBoard.get().getGameState().setPiece(pos,new Piece(color));
+                UIGameBoard.get().getGameState().setPiece(pos, color);
                 UIGameBoard.get().onPlayerMove(pos);
                 break;
             case CLEAR_BOARD:

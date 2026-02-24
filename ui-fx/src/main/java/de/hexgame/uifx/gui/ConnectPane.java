@@ -1,6 +1,5 @@
 package de.hexgame.uifx.gui;
 
-import de.hexgame.logic.Piece;
 import de.hexgame.logic.Position;
 import de.hexgame.uifx.NavigationManager;
 import de.hexgame.uifx.TranslationManager;
@@ -70,7 +69,7 @@ public class ConnectPane extends VBox {
 
     private record ConnectPaneCallback(HexBoardController controller, ConnectPane pane) implements ClientNetworkCallback {
         @Override
-        public void onBoardChange(Position pos, Piece.Color color) {
+        public void onBoardChange(Position pos, int color) {
             controller.onBoardChange(pos, color);
         }
 

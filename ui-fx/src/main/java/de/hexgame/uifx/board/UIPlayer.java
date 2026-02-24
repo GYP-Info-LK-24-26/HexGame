@@ -2,6 +2,8 @@ package de.hexgame.uifx.board;
 
 import de.hexgame.logic.*;
 
+import static de.hexgame.logic.GameState.RED;
+
 public class UIPlayer implements Player {
     private static final long MOVE_TIMEOUT_MS = 30 * 60 * 1000L; // 30 minutes
     private String playerName = "";
@@ -23,7 +25,7 @@ public class UIPlayer implements Player {
 
     @Override
     public synchronized Move think(GameState gameState) {
-        playerName = gameState.getSideToMove().toString();
+        playerName = gameState.getSideToMove() == RED ? "RED" : "BLUE";
         isMoving = true;
         this.gameState = gameState;
         try {

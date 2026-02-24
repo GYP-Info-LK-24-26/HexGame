@@ -4,7 +4,7 @@ import de.hexgame.logic.*;
 
 import java.util.*;
 
-import static de.hexgame.logic.GameState.BOARD_SIZE;
+import static de.hexgame.logic.GameState.*;
 
 public class FinnAlgoPlayer implements Player {
     private static final long THINK_TIME = 2000;
@@ -29,7 +29,7 @@ public class FinnAlgoPlayer implements Player {
     public Move think(GameState gameState) {
         this.startMillis = System.currentTimeMillis();
         bestEval = 0;
-        gameState = gameState.cloneWithoutListeners();
+        gameState = gameState.clone();
         runIterativeDeepeningSearch(gameState);
         bestMove = new Move(bestMove.targetHexagon(), 0.5 + 0.5 * (2 / (1 + Math.exp(-0.002 * bestEval)) - 1));
         return bestMove;
@@ -149,8 +149,8 @@ public class FinnAlgoPlayer implements Player {
 
     // ──────────────────  fast evaluation  ──────────────────
     private int evaluate(GameState b) {
-        Piece.Color stm = b.getSideToMove();
-        Piece.Color opp = (stm == Piece.Color.RED) ? Piece.Color.BLUE : Piece.Color.RED;
+        int stm = b.getSideToMove();
+        int opp = (stm == RED) ? BLUE : RED;
 
         int n = BOARD_SIZE;
         int dSTM = connectionDistanceFast(b, stm, n);
@@ -164,7 +164,7 @@ public class FinnAlgoPlayer implements Player {
 
     // ---------- 0‑1 BFS connection distance ----------
     private int[] distBuf = new int[0];                  // reused scratch space
-    private int connectionDistanceFast(GameState b, Piece.Color pl, int n) {
+    private int connectionDistanceFast(GameState b, int pl, int n) {
         int size = n * n;
         if (distBuf.length < size) distBuf = new int[size];
         Arrays.fill(distBuf, 0, size, INF);
@@ -173,9 +173,9 @@ public class FinnAlgoPlayer implements Player {
         // seed start edge
         for (int idx = 0; idx < size; idx++) {
             if (isStartEdge(idx, n, pl)) {
-                Piece pc = b.getPiece(idx);
-                if (pc != null && pc.getColor() != pl) continue;   // blocked
-                int w = (pc == null) ? 1 : 0;
+                int pc = b.getPiece(idx);
+                if (pc != NO_PIECE && pc != pl) continue;   // blocked
+                int w = (pc == NO_PIECE) ? 1 : 0;
                 distBuf[idx] = w;
                 if (w == 0) dq.addFirst(idx); else dq.addLast(idx);
             }
@@ -185,9 +185,9 @@ public class FinnAlgoPlayer implements Player {
             int d = distBuf[v];
             if (isGoalEdge(v, n, pl)) return d;
             for (int nb : neighbours(v, n)) {
-                Piece pc = b.getPiece(nb);
-                if (pc != null && pc.getColor() != pl) continue;   // enemy blocks
-                int w = (pc == null) ? 1 : 0;
+                int pc = b.getPiece(nb);
+                if (pc != NO_PIECE && pc != pl) continue;   // enemy blocks
+                int w = (pc == NO_PIECE) ? 1 : 0;
                 int nd = d + w;
                 if (nd < distBuf[nb]) {
                     distBuf[nb] = nd;
@@ -198,11 +198,11 @@ public class FinnAlgoPlayer implements Player {
         return INF; // disconnected
     }
 
-    private boolean isStartEdge(int idx, int n, Piece.Color pl) {
-        return (pl == Piece.Color.RED) ? (idx % n == 0) : (idx / n == 0);
+    private boolean isStartEdge(int idx, int n, int pl) {
+        return (pl == RED) ? (idx % n == 0) : (idx / n == 0);
     }
-    private boolean isGoalEdge(int idx, int n, Piece.Color pl) {
-        return (pl == Piece.Color.RED) ? (idx % n == n - 1) : (idx / n == n - 1);
+    private boolean isGoalEdge(int idx, int n, int pl) {
+        return (pl == RED) ? (idx % n == n - 1) : (idx / n == n - 1);
     }
 
     // ---------- neighbour list cache ----------
@@ -229,16 +229,16 @@ public class FinnAlgoPlayer implements Player {
 
     // ---------- bridge counting (lightweight) ----------
     private static final int[][] BR_OFF = {{-1,2},{1,1},{2,-1}};
-    private int countBridges(GameState b, Piece.Color pl, int n) {
+    private int countBridges(GameState b, int pl, int n) {
         int cnt = 0; int size = n*n;
         for (int idx = 0; idx < size; idx++) {
-            Piece p = b.getPiece(idx);
-            if (p == null || p.getColor()!=pl) continue;
+            int p = b.getPiece(idx);
+            if (p == NO_PIECE || p!=pl) continue;
             int r = idx / n, c = idx % n;
             for (int[] o: BR_OFF) {
                 int nr = r+o[0], nc = c+o[1];
                 if (nr<0||nr>=n||nc<0||nc>=n) continue;
-                int tgt = nr*n+nc; if (b.getPiece(tgt) == null || b.getPiece(tgt).getColor() != pl) continue;
+                int tgt = nr*n+nc; if (b.getPiece(tgt) == NO_PIECE || b.getPiece(tgt) != pl) continue;
                 if (o[0] == 2) {
                     nr = r = r+1;
                 }
@@ -247,7 +247,7 @@ public class FinnAlgoPlayer implements Player {
                 }
                 int mid1 = r*n + nc;
                 int mid2 = nr*n + c;
-                if (b.getPiece(mid1)==null && b.getPiece(mid2)==null) {
+                if (b.getPiece(mid1)==NO_PIECE && b.getPiece(mid2)==NO_PIECE) {
                     cnt++;
                 }
             }
@@ -257,7 +257,7 @@ public class FinnAlgoPlayer implements Player {
 
     // ---------- centrality (pre‑computed table) ----------
     private static final Map<Integer,int[]> CENT_CACHE = new HashMap<>();
-    private int centralityScore(GameState b, Piece.Color pl, int n) {
+    private int centralityScore(GameState b, int pl, int n) {
         int[] table = CENT_CACHE.computeIfAbsent(n, size->{
             int sz=size*size; int[] t=new int[sz];
             double ctr=(size-1)/2.0;
@@ -269,8 +269,8 @@ public class FinnAlgoPlayer implements Player {
         });
         int sum=0, sz=n*n;
         for(int idx=0;idx<sz;idx++){
-            Piece p=b.getPiece(idx);
-            if(p!=null && p.getColor()==pl) sum+=table[idx];
+            int p=b.getPiece(idx);
+            if(p!=NO_PIECE && p==pl) sum+=table[idx];
         }
         return sum;
     }

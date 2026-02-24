@@ -1,7 +1,6 @@
 package de.hexgame.uifx.board;
 
 import de.hexgame.logic.GameState;
-import de.hexgame.logic.Piece;
 import de.hexgame.logic.Position;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -12,6 +11,9 @@ import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static de.hexgame.logic.GameState.NO_PIECE;
+import static de.hexgame.logic.GameState.RED;
 
 public class HexBoardCanvas extends Canvas {
     private static final int SIZE = GameState.BOARD_SIZE;
@@ -274,13 +276,13 @@ public class HexBoardCanvas extends Canvas {
                 Position pos = new Position(row, col);
                 Color fill = Color.gray(0.9);
                 if (gameState != null) {
-                    Piece piece = gameState.getPiece(pos);
-                    if (piece != null) {
-                        fill = piece.getColor() == Piece.Color.RED ? Color.CRIMSON : Color.DODGERBLUE;
+                    int piece = gameState.getPiece(pos);
+                    if (piece != NO_PIECE) {
+                        fill = piece == RED ? Color.CRIMSON : Color.DODGERBLUE;
                     } else if (inputEnabled && hoverPosition != null
                             && hoverPosition.row() == row && hoverPosition.column() == col) {
-                        Piece.Color side = gameState.getSideToMove();
-                        fill = (side == Piece.Color.RED ? Color.CRIMSON : Color.DODGERBLUE).deriveColor(0, 0.5, 1, 0.4);
+                        int side = gameState.getSideToMove();
+                        fill = (side == RED ? Color.CRIMSON : Color.DODGERBLUE).deriveColor(0, 0.5, 1, 0.4);
                     }
                 }
                 gc.setFill(fill);

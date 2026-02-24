@@ -2,15 +2,13 @@ package de.hexgame.algorithm.mcts;
 
 import de.hexgame.logic.GameState;
 import de.hexgame.logic.Move;
-import de.hexgame.logic.Piece;
-import de.hexgame.logic.Position;
 import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static de.hexgame.logic.GameState.BOARD_SIZE;
+import static de.hexgame.logic.GameState.*;
 
 public class TreeNode {
     private static final float EXPLORATION_FACTOR = 0.7f;//1.4f;
@@ -67,6 +65,23 @@ public class TreeNode {
         // Selection: walk down tree using UCT
         TreeNode node = this;
         while (!node.children.isEmpty()) {
+            if (node.visits == 50) {
+                MCTSPlayer.iceRuns++;
+                boolean[] deadCells = InferiorCellEngine.computeDeadCells(node.gameState);
+                TreeNode firstChild = node.children.getFirst();
+                node.children.removeIf(c -> {
+                    if (deadCells[c.move.getIndex()]) {
+                        MCTSPlayer.movesPruned++;
+                        return true;
+                    }
+                    return false;
+                });
+                // Safety: never prune all children — restore if everything was removed
+                if (node.children.isEmpty()) {
+                    MCTSPlayer.movesPruned--;
+                    node.children.add(firstChild);
+                }
+            }
             node = node.selectChild();
         }
 
@@ -147,28 +162,26 @@ public class TreeNode {
 
         GameState sim = state.clone();
         while (!sim.isFinished()) {
-            Piece.Color side = sim.getSideToMove();
-            Move m = RolloutPolicy.selectMove(sim);
-            int idx = m.targetHexagon().row() * BOARD_SIZE + m.targetHexagon().column();
-            moveHistory[moveCount++] = idx;
-            if (side == Piece.Color.RED) {
-                redMoves[idx] = true;
+            int side = sim.getSideToMove();
+            int move = RolloutPolicy.selectMove(sim);
+            moveHistory[moveCount++] = move;
+            if (side == RED) {
+                redMoves[move] = true;
             } else {
-                blueMoves[idx] = true;
+                blueMoves[move] = true;
             }
-            sim.makeMove(m);
+            sim.makeMoveFast(move);
         }
 
         // sim.getSideToMove() is the LOSING side (switched after winning move).
-        Piece.Color loser = sim.getSideToMove();
+        int loser = sim.getSideToMove();
         float value = state.getSideToMove() == loser ? -1.0f : 1.0f;
 
         // Update LGR-1: for each winner's move, record it as the good reply to the opponent's preceding move
-        Piece.Color winner = loser == Piece.Color.RED ? Piece.Color.BLUE : Piece.Color.RED;
-        int winnerOffset = winner.ordinal() * TOTAL_CELLS;
-        Piece.Color currentSide = state.getSideToMove();
-        Position lastPos = state.getLastChangedPosition();
-        int prevOpponentMove = lastPos != null ? lastPos.getIndex() : -1;
+        int winner = COLOR_SUM - loser;
+        int winnerOffset = (winner - RED) * TOTAL_CELLS;
+        int currentSide = state.getSideToMove();
+        int prevOpponentMove = state.getLastMove();
 
         for (int i = 0; i < moveCount; i++) {
             if (currentSide == winner && prevOpponentMove != -1) {
@@ -177,7 +190,7 @@ public class TreeNode {
             if (currentSide != winner) {
                 prevOpponentMove = moveHistory[i];
             }
-            currentSide = currentSide == Piece.Color.RED ? Piece.Color.BLUE : Piece.Color.RED;
+            currentSide = COLOR_SUM - currentSide;
         }
 
         return new RolloutResult(value, redMoves, blueMoves);
@@ -190,8 +203,8 @@ public class TreeNode {
         // Update RAVE stats for children whose moves appeared in the rollout
         if (!children.isEmpty()) {
             // The side to move at this node is the side that picks among children
-            Piece.Color sideToMove = gameState.getSideToMove();
-            boolean[] relevantMoves = sideToMove == Piece.Color.RED ? redMoves : blueMoves;
+            int sideToMove = gameState.getSideToMove();
+            boolean[] relevantMoves = sideToMove == RED ? redMoves : blueMoves;
 
             for (TreeNode child : children) {
                 int idx = child.move.targetHexagon().row() * BOARD_SIZE + child.move.targetHexagon().column();

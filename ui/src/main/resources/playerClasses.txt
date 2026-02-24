@@ -1,2 +1,3 @@
 de.hexgame.ui.UIPlayer
 de.hexgame.logic.RandomPlayer
+de.hexgame.algorithm.mcts.MCTSPlayer
