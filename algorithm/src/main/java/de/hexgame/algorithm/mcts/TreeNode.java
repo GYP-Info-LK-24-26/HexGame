@@ -21,6 +21,7 @@ public class TreeNode {
 
     private final Move move;
     private GameState gameState; // lazily materialized
+    private boolean[] prunedCells; // cells to skip during rollouts (dead + captured)
 
     @Getter
     private int visits = 0;
@@ -65,12 +66,17 @@ public class TreeNode {
         // Selection: walk down tree using UCT
         TreeNode node = this;
         while (!node.children.isEmpty()) {
-            if (node.visits == 50) {
+            if (false && node.visits == 50) { // ICE has bugs
                 MCTSPlayer.iceRuns++;
-                boolean[] deadCells = InferiorCellEngine.computeDeadCells(node.gameState);
+                ICEResult iceResult = InferiorCellEngine.computeICE(node.gameState);
+                // Build combined pruning mask: dead + captured cells
+                boolean[] pruned = new boolean[TOTAL_CELLS];
+                for (int i = 0; i < TOTAL_CELLS; i++) {
+                    pruned[i] = iceResult.dead[i] || iceResult.capturedByRed[i] || iceResult.capturedByBlue[i];
+                }
                 TreeNode firstChild = node.children.getFirst();
                 node.children.removeIf(c -> {
-                    if (deadCells[c.move.getIndex()]) {
+                    if (iceResult.dead[c.move.getIndex()]) {
                         MCTSPlayer.movesPruned++;
                         return true;
                     }
@@ -81,6 +87,9 @@ public class TreeNode {
                     MCTSPlayer.movesPruned--;
                     node.children.add(firstChild);
                 }
+                // Replace game state with filled state (captured cells filled in)
+                node.gameState = iceResult.filledState;
+                node.prunedCells = pruned;
             }
             node = node.selectChild();
         }
@@ -114,8 +123,12 @@ public class TreeNode {
             }
         }
 
-        // Rollout
-        RolloutResult result = rollout(node.gameState);
+        // Rollout — find nearest ancestor's pruned mask
+        boolean[] pruned = null;
+        for (TreeNode ancestor = node; ancestor != null; ancestor = ancestor.parent) {
+            if (ancestor.prunedCells != null) { pruned = ancestor.prunedCells; break; }
+        }
+        RolloutResult result = rollout(node.gameState, pruned);
         node.backpropagate(result.value(), result.redMoves(), result.blueMoves());
     }
 
@@ -154,7 +167,7 @@ public class TreeNode {
         return best;
     }
 
-    private RolloutResult rollout(GameState state) {
+    private RolloutResult rollout(GameState state, boolean[] pruned) {
         boolean[] redMoves = new boolean[TOTAL_CELLS];
         boolean[] blueMoves = new boolean[TOTAL_CELLS];
         int[] moveHistory = new int[TOTAL_CELLS];
@@ -163,7 +176,7 @@ public class TreeNode {
         GameState sim = state.clone();
         while (!sim.isFinished()) {
             int side = sim.getSideToMove();
-            int move = RolloutPolicy.selectMove(sim);
+            int move = RolloutPolicy.selectMove(sim, pruned);
             moveHistory[moveCount++] = move;
             if (side == RED) {
                 redMoves[move] = true;

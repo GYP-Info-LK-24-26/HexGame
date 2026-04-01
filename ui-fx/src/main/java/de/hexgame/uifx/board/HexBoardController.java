@@ -1,5 +1,7 @@
 package de.hexgame.uifx.board;
 
+import de.hexgame.algorithm.mcts.ICEResult;
+import de.hexgame.algorithm.mcts.InferiorCellEngine;
 import de.hexgame.logic.*;
 import de.hexgame.uifx.NavigationManager;
 import de.hexgame.uifx.TranslationManager;
@@ -11,8 +13,10 @@ import de.hexgame.uifx.networking.packets.BoardChangeHandler;
 import de.hexgame.uifx.networking.packets.ClientNetworkCallback;
 import de.hexgame.uifx.networking.packets.GameEndHandler;
 import javafx.application.Platform;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -44,6 +48,7 @@ public class HexBoardController implements PlayerMoveListener, ClientNetworkCall
     private boolean gameOver = false;
     private static final int MIN_TIME_PER_TURN = 100;
     private long lastTimeRun = 0;
+    private boolean showICE = false;
 
     private HexBoardController() {}
 
@@ -63,6 +68,18 @@ public class HexBoardController implements PlayerMoveListener, ClientNetworkCall
             canvas.setHoverPosition(null);
             canvas.redraw();
         });
+
+        CheckBox iceToggle = new CheckBox("ICE");
+        iceToggle.setStyle("-fx-text-fill: #00ff88; -fx-font-size: 13;");
+        iceToggle.setSelected(showICE);
+        iceToggle.selectedProperty().addListener((obs, old, val) -> {
+            showICE = val;
+            updateICEOverlay();
+        });
+        StackPane.setAlignment(iceToggle, Pos.TOP_RIGHT);
+        StackPane.setMargin(iceToggle, new Insets(8, 12, 0, 0));
+        boardPane.getChildren().add(iceToggle);
+
         return boardPane;
     }
 
@@ -93,6 +110,7 @@ public class HexBoardController implements PlayerMoveListener, ClientNetworkCall
         canvas.setInputEnabled(false);
         canvas.setWinnerLabel(null);
         canvas.setHoverPosition(null);
+        canvas.setIceResult(null);
         updateLabel();
         canvas.redraw();
 
@@ -153,7 +171,7 @@ public class HexBoardController implements PlayerMoveListener, ClientNetworkCall
         lastTimeRun = System.currentTimeMillis();
         Platform.runLater(() -> {
             updateLabel();
-            canvas.redraw();
+            updateICEOverlay();
         });
     }
 
@@ -176,7 +194,7 @@ public class HexBoardController implements PlayerMoveListener, ClientNetworkCall
     @Override
     public void onBoardChange(Position pos, int color) {
         gameState.setPiece(pos, color);
-        canvas.redraw();
+        updateICEOverlay();
     }
 
     @Override
@@ -214,6 +232,16 @@ public class HexBoardController implements PlayerMoveListener, ClientNetworkCall
             int color = gameState.getSideToMove();
             canvas.setCurrentPlayerLabel(String.valueOf(color));
         }
+    }
+
+    private void updateICEOverlay() {
+        if (showICE && gameState != null && !gameState.isFinished()) {
+            ICEResult result = InferiorCellEngine.computeICE(gameState);
+            canvas.setIceResult(result);
+        } else {
+            canvas.setIceResult(null);
+        }
+        canvas.redraw();
     }
 
     public void showWinner(String playerName) {

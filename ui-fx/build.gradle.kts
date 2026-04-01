@@ -16,6 +16,7 @@ javafx {
 dependencies {
     implementation(project(":logic"))
     implementation(project(":algorithm"))
+    implementation(project(":nn"))
     implementation("io.netty:netty-all:5.0.0.Alpha2")
     implementation("com.google.code.gson:gson:2.10.1")
 }

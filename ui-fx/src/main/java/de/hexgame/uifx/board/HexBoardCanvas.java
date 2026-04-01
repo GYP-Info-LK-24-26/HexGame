@@ -1,5 +1,6 @@
 package de.hexgame.uifx.board;
 
+import de.hexgame.algorithm.mcts.ICEResult;
 import de.hexgame.logic.GameState;
 import de.hexgame.logic.Position;
 import javafx.scene.canvas.Canvas;
@@ -29,6 +30,8 @@ public class HexBoardCanvas extends Canvas {
     private boolean inputEnabled;
     @Setter
     private String winnerLabel;
+    @Setter
+    private ICEResult iceResult;
 
     private static final double TOP_MARGIN = 30;
 
@@ -274,6 +277,7 @@ public class HexBoardCanvas extends Canvas {
                 double[] ys = geometry.hexCornerYs(cx, cy);
 
                 Position pos = new Position(row, col);
+                int idx = row * SIZE + col;
                 Color fill = Color.gray(0.9);
                 if (gameState != null) {
                     int piece = gameState.getPiece(pos);
@@ -288,9 +292,45 @@ public class HexBoardCanvas extends Canvas {
                 gc.setFill(fill);
                 gc.fillPolygon(xs, ys, 6);
 
+                // ICE overlay
+                if (iceResult != null && gameState != null && gameState.getPiece(idx) == NO_PIECE) {
+                    Color overlay = null;
+                    if (iceResult.dead[idx]) {
+                        overlay = Color.color(0, 0, 0, 0.55);
+                    } else if (iceResult.capturedByRed[idx]) {
+                        overlay = Color.CRIMSON.deriveColor(0, 1, 1, 0.45);
+                    } else if (iceResult.capturedByBlue[idx]) {
+                        overlay = Color.DODGERBLUE.deriveColor(0, 1, 1, 0.45);
+                    }
+                    if (overlay != null) {
+                        gc.setFill(overlay);
+                        gc.fillPolygon(xs, ys, 6);
+                    }
+                }
+
                 gc.setStroke(Color.gray(0.3));
                 gc.setLineWidth(1.5);
                 gc.strokePolygon(xs, ys, 6);
+
+                // ICE label
+                if (iceResult != null && gameState != null && gameState.getPiece(idx) == NO_PIECE) {
+                    String label = null;
+                    Color labelColor = Color.WHITE;
+                    if (iceResult.dead[idx]) {
+                        label = "D";
+                    } else if (iceResult.capturedByRed[idx]) {
+                        label = "R";
+                        labelColor = Color.WHITE;
+                    } else if (iceResult.capturedByBlue[idx]) {
+                        label = "B";
+                        labelColor = Color.WHITE;
+                    }
+                    if (label != null) {
+                        gc.setFont(Font.font(geometry.getHexSize() * 0.6));
+                        gc.setFill(labelColor);
+                        gc.fillText(label, cx - geometry.getHexSize() * 0.18, cy + geometry.getHexSize() * 0.2);
+                    }
+                }
             }
         }
     }

@@ -4,14 +4,10 @@ import de.hexgame.logic.GameState;
 import de.hexgame.logic.Move;
 import de.hexgame.nn.Model;
 import lombok.Getter;
-import org.apache.commons.statistics.distribution.ContinuousDistribution;
-import org.apache.commons.statistics.distribution.GammaDistribution;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static de.hexgame.logic.GameState.BOARD_SIZE;
@@ -24,7 +20,8 @@ public class TreeNode {
     private final List<TreeNode> children = new ArrayList<>();
 
     private final Move move;
-    private GameState gameState; // lazily evaluated
+    @Getter
+    private GameState gameState;
     private Model.Output modelOutput;
 
     @Getter
@@ -39,24 +36,6 @@ public class TreeNode {
 
     public float getMeanValue() {
         return visits == 0 ? 0.0f : valueSum / visits;
-    }
-
-    public void addDirichletNoise() {
-        GammaDistribution gamma = GammaDistribution.of(0.1, 1.0);
-        ContinuousDistribution.Sampler sampler = gamma.createSampler(ThreadLocalRandom.current()::nextLong);
-        float[] samples = new float[BOARD_SIZE * BOARD_SIZE];
-        float sum = 0.0f;
-        for (int i = 0; i < BOARD_SIZE * BOARD_SIZE; i++) {
-            float sample = (float) sampler.sample();
-            samples[i] = sample;
-            sum += sample;
-        }
-
-        final float epsilon = 0.25f;
-
-        for (int i = 0; i < BOARD_SIZE * BOARD_SIZE; i++) {
-            modelOutput.policy()[i] = modelOutput.policy()[i] * (1 - epsilon) + samples[i] * epsilon / sum;
-        }
     }
 
     public TreeNode jumpTo(GameState gameState) {
@@ -79,36 +58,38 @@ public class TreeNode {
         return null;
     }
 
-    public CompletableFuture<Void> expand(Model model, Executor dispatcher, boolean addNoise) {
+    /**
+     * Walk the tree to select a leaf node for NN evaluation. Applies virtual loss along the path.
+     *
+     * @return the leaf node needing evaluation, or null if a terminal node was reached (already backpropagated)
+     */
+    public TreeNode select() {
         visits++;
         valueSum += VIRTUAL_LOSS;
+
         if (visits == 1 && move != null) {
             gameState = gameState.clone();
             gameState.makeMove(move);
         }
 
         if (gameState.isFinished()) {
-            backpropagate(-1.0f);
-            return CompletableFuture.completedFuture(null);
+            backpropagate(-1.1f);
+            return null;
         }
 
         if (visits == 1) {
             for (Move legalMove : gameState.getLegalMoves()) {
                 children.add(new TreeNode(this, legalMove, gameState));
             }
-
-            return model.predict(gameState).thenAcceptAsync(output -> {
-                modelOutput = output;
-                if (addNoise) {
-                    addDirichletNoise();
-                }
-                backpropagate(modelOutput.value());
-            }, dispatcher);
+            return this;
         }
 
-        TreeNode best = getBestChild();
+        return getBestChild().select();
+    }
 
-        return best.expand(model, dispatcher, false);
+    public void applyOutput(Model.Output output) {
+        modelOutput = output;
+        backpropagate(modelOutput.value());
     }
 
     private void backpropagate(float eval) {
@@ -118,15 +99,29 @@ public class TreeNode {
         }
     }
 
+    private float getPrior(TreeNode child) {
+        if (modelOutput == null) {
+            return 1.0f / (BOARD_SIZE * BOARD_SIZE) + ThreadLocalRandom.current().nextFloat(1e-4f);
+        }
+        return modelOutput.policy()[child.move.getIndex()];
+    }
+
     private TreeNode getBestChild() {
         float bestValue = Float.NEGATIVE_INFINITY;
         TreeNode best = null;
 
+        float sumVisitedPriors = 0.0f;
         for (TreeNode child : children) {
-            final float prior = modelOutput == null ? 1.0f / (BOARD_SIZE * BOARD_SIZE) + ThreadLocalRandom.current().nextFloat(1e-4f)
-                    : modelOutput.policy()[child.move.getIndex()];
-            float value = (float) (-child.getMeanValue() +
-                                EXPLORATION_FACTOR * prior * Math.sqrt(visits) / (1 + child.visits));
+            if (child.visits > 0) {
+                sumVisitedPriors += getPrior(child);
+            }
+        }
+        float fpuQ = getMeanValue() - 0.2f * (float) Math.sqrt(sumVisitedPriors);
+
+        for (TreeNode child : children) {
+            float Q = child.visits == 0 ? fpuQ : -child.getMeanValue();
+            float U = (float) (EXPLORATION_FACTOR * getPrior(child) * Math.sqrt(visits) / (1 + child.visits));
+            float value = Q + U;
             if (value > bestValue) {
                 bestValue = value;
                 best = child;

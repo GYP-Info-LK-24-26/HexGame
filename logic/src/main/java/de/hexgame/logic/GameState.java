@@ -22,9 +22,11 @@ public class GameState implements Serializable, Cloneable {
     public static final int RED = 1;
     public static final int BLUE = 2;
     public static final int COLOR_SUM = 3;
-    public static final int GROUP_HIGH = TOTAL_CELLS;
-    public static final int GROUP_LOW = TOTAL_CELLS + 1;
-    public static final int GROUP_COUNT = TOTAL_CELLS + 2;
+    public static final int EDGE_RED_LOW = TOTAL_CELLS;
+    public static final int EDGE_RED_HIGH = TOTAL_CELLS + 1;
+    public static final int EDGE_BLUE_LOW = TOTAL_CELLS + 2;
+    public static final int EDGE_BLUE_HIGH = TOTAL_CELLS + 3;
+    public static final int GROUP_COUNT = TOTAL_CELLS + 4;
 
     // Precomputed neighbor table: for each cell index, the array of valid neighbor indices
     public static final int[][] NEIGHBORS = new int[TOTAL_CELLS][];
@@ -164,8 +166,14 @@ public class GameState implements Serializable, Cloneable {
 
         unionWithGoalEdge(groups, index, piece);
 
-        if (groups.find(GROUP_HIGH) == groups.find(GROUP_LOW)) {
-            finished = true;
+        if (piece == RED) {
+            if (groups.find(EDGE_RED_LOW) == groups.find(EDGE_RED_HIGH)) {
+                finished = true;
+            }
+        } else {
+            if (groups.find(EDGE_BLUE_LOW) == groups.find(EDGE_BLUE_HIGH)) {
+                finished = true;
+            }
         }
     }
 
@@ -229,16 +237,16 @@ public class GameState implements Serializable, Cloneable {
         if (piece == RED) {
             int column = index % BOARD_SIZE;
             if (column == 0) {
-                groups.union(index, GROUP_LOW);
+                groups.union(index, EDGE_RED_LOW);
             } else if (column == BOARD_SIZE - 1) {
-                groups.union(index, GROUP_HIGH);
+                groups.union(index, EDGE_RED_HIGH);
             }
         } else {
             int row = index / BOARD_SIZE;
             if (row == 0) {
-                groups.union(index, GROUP_LOW);
+                groups.union(index, EDGE_BLUE_LOW);
             } else if (row == BOARD_SIZE - 1) {
-                groups.union(index, GROUP_HIGH);
+                groups.union(index, EDGE_BLUE_HIGH);
             }
         }
     }

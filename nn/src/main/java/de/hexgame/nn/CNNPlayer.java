@@ -5,42 +5,33 @@ import de.hexgame.logic.Move;
 import de.hexgame.logic.Player;
 import de.hexgame.logic.Position;
 import de.hexgame.nn.mcts.GameTree;
-import de.hexgame.nn.training.GameData;
-import lombok.SneakyThrows;
+import de.hexgame.nn.mcts.TreeNode;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Executor;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 public class CNNPlayer implements Player {
-    private static final File DEFAULT_MODEL_FILE = new File("model.zip");
-    private static final int SIMULATION_COUNT = 400;
+    private static final File DEFAULT_MODEL_FILE = new File("saved_model");
+    private static final int BATCH_SIZE = 16;
+
+    private static final long[] TIME_BUDGETS = {200, 500, 1000, 2000, 4000, 8000};
 
     private static int INSTANCE_COUNTER = 0;
 
     private final String name;
     private final Model model;
     private final GameTree gameTree;
-    private final GameData gameData;
-    private final BlockingQueue<Runnable> taskQueue = new LinkedBlockingQueue<>();
-    private final Executor dispatcher = taskQueue::add;
-    private int startedSimulations = 0;
-    private int finishedSimulations = 0;
+    private final long timeBudgetMs;
 
-    public CNNPlayer() {
-        this(new Model(DEFAULT_MODEL_FILE), null);
-        model.start();
-    }
-
-    public CNNPlayer(Model model, GameData gameData) {
+    public CNNPlayer(int difficulty) {
         name = String.format("CNN Player %d", ++INSTANCE_COUNTER);
-        this.model = model;
-        gameTree = new GameTree(new GameState(), gameData != null);
-        this.gameData = gameData;
+        model = new Model(DEFAULT_MODEL_FILE);
+        gameTree = new GameTree(new GameState());
+
+        this.timeBudgetMs = TIME_BUDGETS[Math.max(0, Math.min(difficulty, TIME_BUDGETS.length - 1))];
     }
 
     @Override
@@ -48,68 +39,46 @@ public class CNNPlayer implements Player {
         return name;
     }
 
-    @SneakyThrows
     @Override
     public Move think(GameState gameState) {
-        startedSimulations = finishedSimulations = 0;
-
         gameTree.jumpTo(gameState);
 
-        for (int i = 0; i < 16; i++) {
-            expandGameTree();
-        }
+        int completed = 0;
+        long startMs = System.currentTimeMillis();
+        while (startMs + timeBudgetMs > System.currentTimeMillis()) {
+            List<TreeNode> leaves = new ArrayList<>();
+            List<GameState> states = new ArrayList<>();
 
-        // Execute tasks until all simulations are finished
-        while (finishedSimulations < SIMULATION_COUNT) {
-            taskQueue.take().run();
+            for (int i = 0; i < BATCH_SIZE; i++) {
+                TreeNode leaf = gameTree.selectLeaf();
+                completed++;
+                if (leaf != null) {
+                    leaves.add(leaf);
+                    states.add(leaf.getGameState());
+                }
+            }
+
+            if (!leaves.isEmpty()) {
+                List<Model.Output> outputs = model.predict(states);
+                for (int i = 0; i < leaves.size(); i++) {
+                    leaves.get(i).applyOutput(outputs.get(i));
+                }
+            }
         }
 
         Model.Output output = gameTree.getCombinedOutput();
         float[] policy = output.policy();
-        int targetIndex = gameState.getLegalMoves().getFirst().getIndex();
-        // Check if collecting training data
-        if (gameData == null) {
-            // Select best move
-            float maxValue = 0.0f;
-            for (int i = 0; i < policy.length; i++) {
-                if (policy[i] > maxValue) {
-                    maxValue = policy[i];
-                    targetIndex = i;
-                }
+        int bestIndex = gameState.getLegalMoves().getFirst().getIndex();
+        float maxValue = 0.0f;
+        for (int i = 0; i < policy.length; i++) {
+            if (policy[i] > maxValue) {
+                maxValue = policy[i];
+                bestIndex = i;
             }
-        } else {
-            // Normalize policy
-            float sum = 0.0f;
-            for (float v : policy) {
-                sum += v;
-            }
-            for (int i = 0; i < policy.length; i++) {
-                policy[i] /= sum;
-            }
-
-            // Sample random move based on policy
-            float randomValue = ThreadLocalRandom.current().nextFloat();
-            for (int i = 0; i < policy.length; i++) {
-                randomValue -= policy[i];
-                if (randomValue <= 1e-10f) {
-                    targetIndex = i;
-                    break;
-                }
-            }
-            gameData.add(gameState.clone(), new Model.Output(policy, output.value()));
         }
 
-        return new Move(new Position(targetIndex), output.value());
-    }
+        System.out.println(completed);
 
-    private void expandGameTree() {
-        gameTree.expand(model, dispatcher)
-                .thenRunAsync(() -> {
-                    finishedSimulations++;
-                    if (startedSimulations < SIMULATION_COUNT) {
-                        expandGameTree();
-                    }
-                }, dispatcher);
-        startedSimulations++;
+        return new Move(new Position(bestIndex), Math.clamp(output.value(), -1.0f, 1.0f));
     }
 }

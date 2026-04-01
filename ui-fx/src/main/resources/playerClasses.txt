@@ -1,3 +1,4 @@
 de.hexgame.uifx.board.UIPlayer
 de.hexgame.logic.RandomPlayer
 de.hexgame.algorithm.mcts.MCTSPlayer
+de.hexgame.nn.CNNPlayer

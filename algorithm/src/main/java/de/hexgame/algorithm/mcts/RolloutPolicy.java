@@ -25,6 +25,10 @@ class RolloutPolicy {
     }
 
     static int selectMove(GameState state) {
+        return selectMove(state, null);
+    }
+
+    static int selectMove(GameState state, boolean[] pruned) {
         int lastMove = state.getLastMove();
         if (lastMove != -1) {
             // Save-bridge: if the opponent's last move attacks one of our bridges,
@@ -40,7 +44,7 @@ class RolloutPolicy {
             }
         }
 
-        return randomMove(state);
+        return randomMove(state, pruned);
     }
 
     /**
@@ -90,13 +94,25 @@ class RolloutPolicy {
     }
 
     static int randomMove(GameState state) {
+        return randomMove(state, null);
+    }
+
+    private static int randomMove(GameState state, boolean[] pruned) {
         int r = ThreadLocalRandom.current().nextInt(TOTAL_CELLS);
+        int fallback = -1;
         for (int i = 0; i < TOTAL_CELLS; i++) {
             int idx = (r + i * 7) % TOTAL_CELLS;
             if (state.getPiece(idx) == NO_PIECE) {
-                return idx;
+                if (pruned == null || !pruned[idx]) {
+                    return idx;
+                }
+                if (fallback == -1) {
+                    fallback = idx;
+                }
             }
         }
+        // If all empty cells are pruned, fall back to any empty cell
+        if (fallback != -1) return fallback;
         throw new IllegalStateException("No empty cell found");
     }
 }
